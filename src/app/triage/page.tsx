@@ -1,0 +1,161 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, AlertTriangle, PartyPopper } from 'lucide-react';
+import useRipple from '@/hooks/use-ripple';
+
+const triageQuestions = [
+  { id: 1, text: 'Are you experiencing severe difficulty breathing?', redFlag: true },
+  { id: 2, text: 'Have you experienced any chest pain or pressure in the last 24 hours?', redFlag: true },
+  { id: 3, text: 'Do you have a fever over 101°F (38.3°C)?', redFlag: false },
+  { id: 4, text: 'Have you had a persistent cough for more than a week?', redFlag: false },
+  { id: 5, text: 'Are you feeling unusually fatigued or weak?', redFlag: false },
+  { id: 6, text: 'Have you lost your sense of taste or smell?', redFlag: false },
+];
+
+type Answer = 'Yes' | 'No' | null;
+
+export default function TriagePage() {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Answer[]>(Array(triageQuestions.length).fill(null));
+  const [backtrackingDisabled, setBacktrackingDisabled] = useState(false);
+  const [refs, createRipple] = useRipple();
+
+  const handleAnswer = (answer: Answer) => {
+    const newAnswers = [...answers];
+    newAnswers[currentQuestionIndex] = answer;
+    setAnswers(newAnswers);
+
+    const currentQuestion = triageQuestions[currentQuestionIndex];
+    if (answer === 'Yes' && currentQuestion.redFlag) {
+      setBacktrackingDisabled(true);
+    }
+
+    // Move to next question
+    if (currentQuestionIndex < triageQuestions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentQuestionIndex > 0 && !backtrackingDisabled) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  const progress = (currentQuestionIndex / triageQuestions.length) * 100;
+  const isCompleted = currentQuestionIndex === triageQuestions.length;
+
+  const redFlagTriggered = answers.some(
+    (ans, i) => ans === 'Yes' && triageQuestions[i].redFlag
+  );
+
+  const cardVariants = {
+    initial: { opacity: 0, x: 50 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -50 },
+  };
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-8">
+       <Card className="overflow-hidden">
+        <CardHeader>
+          <CardTitle>Health Triage</CardTitle>
+           <div className="pt-4">
+             <Progress value={progress} />
+             <p className="text-sm text-muted-foreground pt-2">
+                Step {Math.min(currentQuestionIndex + 1, triageQuestions.length)} of {triageQuestions.length}
+             </p>
+           </div>
+        </CardHeader>
+        <CardContent>
+          <AnimatePresence mode="wait">
+            {!isCompleted ? (
+              <motion.div
+                key={currentQuestionIndex}
+                variants={cardVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
+                <p className="text-2xl font-semibold text-center h-20 flex items-center justify-center">
+                  {triageQuestions[currentQuestionIndex].text}
+                </p>
+                <div className="flex justify-center gap-4">
+                  <Button
+                    ref={(el) => (refs.current['yes-btn'] = el)}
+                    onClick={(e) => { createRipple(e, 'yes-btn'); handleAnswer('Yes'); }}
+                    className="relative overflow-hidden w-32 h-16 text-lg"
+                    size="lg"
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    ref={(el) => (refs.current['no-btn'] = el)}
+                    onClick={(e) => { createRipple(e, 'no-btn'); handleAnswer('No'); }}
+                    className="relative overflow-hidden w-32 h-16 text-lg"
+                    variant="secondary"
+                    size="lg"
+                  >
+                    No
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+                <motion.div
+                  key="completion"
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.3 }}
+                  className="text-center space-y-4"
+                >
+                  {redFlagTriggered ? (
+                    <div className="flex flex-col items-center gap-4 text-destructive">
+                      <AlertTriangle className="h-12 w-12" />
+                      <h2 className="text-2xl font-bold">Urgent Action Required</h2>
+                      <p>
+                        Based on your answers, we recommend seeking medical attention immediately. Please contact your doctor or proceed to the nearest emergency room.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 text-primary">
+                      <PartyPopper className="h-12 w-12" />
+                      <h2 className="text-2xl font-bold">Triage Complete</h2>
+                      <p>
+                        Thank you for completing the triage. Your symptoms do not indicate an immediate emergency, but please continue to monitor your health and consult a doctor if you have concerns.
+                      </p>
+                    </div>
+                  )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
+      
+      {!isCompleted && <div className="flex justify-start">
+        <Button
+          onClick={handleBack}
+          disabled={currentQuestionIndex === 0 || backtrackingDisabled}
+          variant="outline"
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>}
+       {backtrackingDisabled && (
+        <p className="text-sm text-center text-destructive">
+          <AlertTriangle className="inline h-4 w-4 mr-1" />
+          Due to a critical answer, you cannot go back.
+        </p>
+      )}
+    </div>
+  );
+}

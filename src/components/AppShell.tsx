@@ -17,6 +17,7 @@ import { PageTransition } from './PageTransition';
 
 const pageTitles: { [key: string]: string } = {
   '/': 'Dashboard',
+  '/triage': 'Triage',
   '/symptoms': 'Symptom Tracker',
   '/medications': 'Medication Log',
   '/appointments': 'Appointments',

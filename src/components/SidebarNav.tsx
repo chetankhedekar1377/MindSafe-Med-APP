@@ -12,11 +12,13 @@ import {
   Pill,
   Calendar,
   Sparkles,
+  ClipboardList,
 } from 'lucide-react';
 import Link from 'next/link';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/triage', label: 'Triage', icon: ClipboardList },
   { href: '/symptoms', label: 'Symptoms', icon: HeartPulse },
   { href: '/medications', label: 'Medications', icon: Pill },
   { href: '/appointments', label: 'Appointments', icon: Calendar },
