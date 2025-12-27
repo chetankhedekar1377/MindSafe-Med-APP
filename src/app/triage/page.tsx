@@ -20,6 +20,7 @@ import { getNextQuestion, generateTriageSummary } from './actions';
 import { TriageState, TriageStateSchema } from "@/ai/flows/symptom-triage";
 import type { TriageSummary } from '@/ai/flows/generate-triage-summary';
 import { Skeleton } from '@/components/ui/skeleton';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 export default function TriagePage() {
   const [triageState, setTriageState] = useState<TriageState | null>(null);
@@ -28,6 +29,7 @@ export default function TriagePage() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [primarySymptom, setPrimarySymptom] = useState('');
+  const [ , setLastTriage] = useLocalStorage<TriageState | null>('lastTriage', null);
   
   const [refs, createRipple] = useRipple();
   const { toast } = useToast();
@@ -39,10 +41,13 @@ export default function TriagePage() {
         const summary = await generateTriageSummary(triageState);
         setTriageSummary(summary);
         setIsLoadingSummary(false);
+        setLastTriage(triageState); // Save completed triage state
       };
       fetchSummary();
+    } else if (triageState?.isCompleted && triageState.redFlag) {
+        setLastTriage(triageState); // Save completed triage state even if it's a red flag
     }
-  }, [triageState, triageSummary, isLoadingSummary]);
+  }, [triageState, triageSummary, isLoadingSummary, setLastTriage]);
 
   const handlePrimarySymptomSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +56,7 @@ export default function TriagePage() {
     setError(null);
     setTriageSummary(null);
     const initialState: TriageState = {
+      triageId: '', // Will be set by the flow
       primarySymptom,
       questionHistory: [],
       answers: [],
@@ -59,6 +65,7 @@ export default function TriagePage() {
       currentQuestion: null,
       conditionProbabilities: [],
       highestRiskLevel: null,
+      completedAt: null,
     };
     const nextState = await getNextQuestion(initialState);
     setTriageState(nextState);

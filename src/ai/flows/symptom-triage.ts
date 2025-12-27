@@ -12,6 +12,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
+
 
 const QuestionSchema = z.object({
   id: z.string(),
@@ -31,6 +33,8 @@ const ConditionProbabilitySchema = z.object({
 type RiskLevel = 'GREEN' | 'YELLOW' | 'RED';
 
 export const TriageStateSchema = z.object({
+  triageId: z.string().describe('Unique ID for this triage session.'),
+  completedAt: z.number().nullable().describe('Timestamp when the triage was completed.'),
   primarySymptom: z.string().describe('The user-reported primary symptom.'),
   questionHistory: z.array(z.string()).describe('The text of questions that have already been asked.'),
   answers: z.array(z.enum(['Yes', 'No'])).describe('The user\'s answers to the questions in `questionHistory`.'),
@@ -182,8 +186,11 @@ export const symptomTriageFlow = ai.defineFlow(
     outputSchema: TriageStateSchema,
   },
   async (state) => {
-    // 1. Initialize probabilities if this is the first step
+    // 1. Initialize probabilities and ID if this is the first step
     if (state.questionHistory.length === 0) {
+      if (!state.triageId) {
+        state.triageId = uuidv4();
+      }
       state.conditionProbabilities = Object.entries(BASE_PROBABILITIES).map(([condition, probability]) => ({
         condition,
         probability,
@@ -199,7 +206,17 @@ export const symptomTriageFlow = ai.defineFlow(
       const lastQuestionObject = allQuestions.find(q => q.text === lastQuestionText);
 
       if (lastQuestionObject) {
-        // Update probabilities based on the last answer
+        // Check for red flag first. This is the highest priority.
+        if (lastQuestionObject.redFlag && lastAnswer === 'Yes') {
+          state.isCompleted = true;
+          state.redFlag = { reason: `The user answered "Yes" to the question: "${lastQuestionText}"` };
+          state.currentQuestion = null;
+          state.highestRiskLevel = 'RED';
+          state.completedAt = Date.now();
+          return state;
+        }
+
+        // If no red flag, update probabilities.
         const currentProbsMap = state.conditionProbabilities.reduce((acc, curr) => {
           acc[curr.condition] = curr.probability;
           return acc;
@@ -211,15 +228,6 @@ export const symptomTriageFlow = ai.defineFlow(
           condition,
           probability,
         }));
-        
-        // Check for red flag
-        if (lastQuestionObject.redFlag && lastAnswer === 'Yes') {
-          state.isCompleted = true;
-          state.redFlag = { reason: `The user answered "Yes" to the question: "${lastQuestionText}"` };
-          state.currentQuestion = null;
-          state.highestRiskLevel = 'RED';
-          return state;
-        }
       }
     }
     
@@ -230,7 +238,6 @@ export const symptomTriageFlow = ai.defineFlow(
        }
     };
     checkCompletion();
-
 
     // 3. Find the next question that hasn't been asked yet.
     const normalizedSymptom = state.primarySymptom.toLowerCase().trim();
@@ -248,13 +255,17 @@ export const symptomTriageFlow = ai.defineFlow(
       state.currentQuestion = null;
     }
     
-    // 5. If completed, determine the highest risk level
-    if (state.isCompleted && state.conditionProbabilities.length > 0) {
-        const sortedConditions = [...state.conditionProbabilities].sort((a, b) => b.probability - a.probability);
-        const mostLikelyCondition = sortedConditions[0].condition;
-        state.highestRiskLevel = CONDITION_RISK_LEVEL[mostLikelyCondition] || 'YELLOW';
+    // 5. If completed, determine the highest risk level and set completion time
+    if (state.isCompleted) {
+        if (!state.completedAt) {
+          state.completedAt = Date.now();
+        }
+        if (state.conditionProbabilities.length > 0 && !state.redFlag) {
+            const sortedConditions = [...state.conditionProbabilities].sort((a, b) => b.probability - a.probability);
+            const mostLikelyCondition = sortedConditions[0].condition;
+            state.highestRiskLevel = CONDITION_RISK_LEVEL[mostLikelyCondition] || 'YELLOW';
+        }
     }
-
 
     return state;
   }

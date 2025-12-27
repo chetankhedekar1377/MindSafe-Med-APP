@@ -3,10 +3,15 @@
 import { TriageState, TriageStateSchema, symptomTriageFlow } from "@/ai/flows/symptom-triage";
 import { generateTriageSummary as generateTriageSummaryFlow, TriageSummary, TriageSummarySchema } from "@/ai/flows/generate-triage-summary";
 import { z } from "zod";
-
+import { v4 as uuidv4 } from 'uuid';
 
 export async function getNextQuestion(currentState: TriageState): Promise<TriageState> {
   try {
+    // Ensure a unique ID is set for new triages
+    if (!currentState.triageId) {
+      currentState.triageId = uuidv4();
+    }
+    
     // Validate input against the Zod schema
     const validatedState = TriageStateSchema.parse(currentState);
     
@@ -28,6 +33,7 @@ export async function getNextQuestion(currentState: TriageState): Promise<Triage
         redFlag: { reason: "An unexpected system error occurred." },
         currentQuestion: null,
         highestRiskLevel: 'RED',
+        completedAt: Date.now(),
     };
     return errorState;
   }

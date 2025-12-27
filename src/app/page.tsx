@@ -14,6 +14,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Feedback } from '@/components/Feedback';
+import { TriageFeedback } from '@/components/TriageFeedback';
 
 export default function DashboardPage() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'dashboard-hero');
@@ -57,6 +58,10 @@ export default function DashboardPage() {
         </Card>
       </motion.div>
 
+      <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.1)}>
+        <TriageFeedback />
+      </motion.div>
+      
       <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.1)}>
         <Feedback />
       </motion.div>
