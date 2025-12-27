@@ -20,7 +20,6 @@ const pageTitles: { [key: string]: string } = {
   '/triage': 'Triage',
   '/symptoms': 'Symptom Tracker',
   '/medications': 'Medication Log',
-  '/appointments': 'Appointments',
   '/insights': 'Health Insights',
   '/privacy': 'Privacy Policy',
 };

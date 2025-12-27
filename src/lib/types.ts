@@ -13,11 +13,3 @@ export interface Medication {
   time: string;
   takenToday: boolean;
 }
-
-export interface Appointment {
-  id: string;
-  provider: string;
-  dateTime: string;
-  location?: string;
-  notes?: string;
-}

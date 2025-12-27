@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Lightbulb, AlertTriangle, Sparkles, HelpCircle } from 'lucide-react';
 import type { HealthInsightsOutput } from '@/ai/flows/personalized-health-insights';
 import { generateInsightsAction } from './actions';
-import type { Appointment, Medication, Symptom } from '@/lib/types';
+import type { Medication, Symptom } from '@/lib/types';
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<HealthInsightsOutput | null>(null);
@@ -23,17 +23,14 @@ export default function InsightsPage() {
 
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   
   useEffect(() => {
     try {
       const storedSymptoms = localStorage.getItem('symptoms');
       const storedMeds = localStorage.getItem('medications');
-      const storedAppointments = localStorage.getItem('appointments');
 
       if(storedSymptoms) setSymptoms(JSON.parse(storedSymptoms));
       if(storedMeds) setMedications(JSON.parse(storedMeds));
-      if(storedAppointments) setAppointments(JSON.parse(storedAppointments));
     } catch (e) {
       console.error("Failed to parse data from localStorage", e);
     }
@@ -44,7 +41,7 @@ export default function InsightsPage() {
     setError(null);
     setInsights(null);
     
-    const result = await generateInsightsAction({ symptoms, medications, appointments });
+    const result = await generateInsightsAction({ symptoms, medications });
 
     if (result.success && result.data) {
       setInsights(result.data);
@@ -54,7 +51,7 @@ export default function InsightsPage() {
     setIsLoading(false);
   };
   
-  const canGenerate = symptoms.length > 0 || medications.length > 0 || appointments.length > 0;
+  const canGenerate = symptoms.length > 0 || medications.length > 0;
 
   return (
     <div className="space-y-6">
@@ -70,14 +67,14 @@ export default function InsightsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            By analyzing your symptoms, medications, and appointments, our AI can help you understand your health better and prepare for doctor visits. This tool does not provide medical advice.
+            By analyzing your symptoms and medications, our AI can help you understand your health better and prepare for doctor visits. This tool does not provide medical advice.
           </p>
           <Button onClick={handleGenerateInsights} disabled={isLoading || !canGenerate}>
             {isLoading ? 'Generating...' : 'Generate My Insights'}
           </Button>
           {!canGenerate && (
              <p className="text-sm text-muted-foreground pt-2">
-                Add symptoms, medications, or appointments to generate insights.
+                Add symptoms or medications to generate insights.
              </p>
           )}
         </CardContent>

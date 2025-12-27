@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, HeartPulse, Pill, Calendar } from 'lucide-react';
+import { ArrowRight, HeartPulse, Pill } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       <TriageFeedback />
       <Feedback />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.2)}>
           <Card className="flex flex-col h-full">
             <CardHeader>
@@ -109,32 +109,6 @@ export default function DashboardPage() {
               <Button asChild className="w-full">
                 <Link href="/medications">
                   Log Medications <ArrowRight />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.4)}>
-          <Card className="flex flex-col h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="text-primary" />
-                Appointments
-              </CardTitle>
-              <CardDescription>
-                Keep track of your doctor visits.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <p>
-                Schedule and manage appointments so you never miss a check-up.
-              </p>
-            </CardContent>
-            <CardContent>
-              <Button asChild className="w-full">
-                <Link href="/appointments">
-                  View Appointments <ArrowRight />
                 </Link>
               </Button>
             </CardContent>

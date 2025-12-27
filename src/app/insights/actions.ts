@@ -1,13 +1,12 @@
 'use server';
 
 import { getPersonalizedHealthInsights } from '@/ai/flows/personalized-health-insights';
-import type { Appointment, Medication, Symptom } from '@/lib/types';
+import type { Medication, Symptom } from '@/lib/types';
 import { format } from 'date-fns';
 
 type InsightData = {
   symptoms: Symptom[];
   medications: Medication[];
-  appointments: Appointment[];
 };
 
 export async function generateInsightsAction(data: InsightData) {
@@ -31,21 +30,9 @@ export async function generateInsightsAction(data: InsightData) {
         )
         .join('\n') || 'No medications tracked.';
 
-    const appointmentsString =
-      data.appointments
-        .map(
-          (a) =>
-            `- Appointment with ${a.provider} on ${format(
-              new Date(a.dateTime),
-              'PPP p'
-            )}`
-        )
-        .join('\n') || 'No appointments tracked.';
-
     const insights = await getPersonalizedHealthInsights({
       symptoms: symptomsString,
       medications: medicationsString,
-      appointments: appointmentsString,
     });
 
     return { success: true, data: insights };
