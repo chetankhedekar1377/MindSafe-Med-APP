@@ -229,7 +229,7 @@ export default function SymptomsPage() {
                   control={form.control}
                   name="severity"
                   render={({ field: { value, onChange } }) => (
-                    <FormItem>
+                    <FormItem className="md:col-span-3">
                       <FormLabel>Severity: {value}</FormLabel>
                       <FormControl>
                         <Slider
@@ -260,46 +260,48 @@ export default function SymptomsPage() {
           <CardTitle>Symptom History</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Symptom</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Severity</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {symptoms.length > 0 ? (
-                [...symptoms]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.date).getTime() - new Date(a.date).getTime()
-                  )
-                  .map((symptom) => (
-                    <TableRow key={symptom.id}>
-                      <TableCell className="font-medium">
-                        {symptom.name}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(symptom.date), 'MMMM d, yyyy')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {symptom.severity}/10
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
+          <div className="w-full overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center text-muted-foreground"
-                  >
-                    No symptoms logged yet.
-                  </TableCell>
+                  <TableHead>Symptom</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Severity</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {symptoms.length > 0 ? (
+                  [...symptoms]
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                    )
+                    .map((symptom) => (
+                      <TableRow key={symptom.id}>
+                        <TableCell className="font-medium">
+                          {symptom.name}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(symptom.date), 'MMMM d, yyyy')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {symptom.severity}/10
+                        </TableCell>
+                      </TableRow>
+                    ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="text-center text-muted-foreground"
+                    >
+                      No symptoms logged yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
