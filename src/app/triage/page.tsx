@@ -16,7 +16,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Input } from '@/components/ui/input';
-import { getNextQuestion, type TriageState } from './actions';
+import { getNextQuestion } from './actions';
+import type { TriageState } from '@/ai/flows/symptom-triage';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const likelihoodData = [

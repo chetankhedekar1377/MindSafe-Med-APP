@@ -3,8 +3,6 @@
 import { TriageState, TriageStateSchema, symptomTriageFlow } from "@/ai/flows/symptom-triage";
 import { z } from "zod";
 
-export type { TriageState } from "@/ai/flows/symptom-triage";
-
 export async function getNextQuestion(currentState: TriageState): Promise<TriageState> {
   try {
     // Validate input against the Zod schema
