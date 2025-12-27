@@ -41,6 +41,9 @@ export default function TriagePage() {
   const { toast } = useToast();
 
   const handleAnswer = (answer: Answer) => {
+    if (typeof window !== 'undefined' && window.navigator.vibrate) {
+      window.navigator.vibrate(50);
+    }
     const newAnswers = [...answers];
     newAnswers[currentQuestionIndex] = answer;
     setAnswers(newAnswers);

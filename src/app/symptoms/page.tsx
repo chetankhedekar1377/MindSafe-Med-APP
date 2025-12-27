@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -28,6 +28,7 @@ import {
   CircleAlert as NauseaIcon,
   Heart,
   Smile,
+  CheckCircle,
 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -44,7 +45,7 @@ import {
 import useLocalStorage from '@/hooks/use-local-storage';
 import type { Symptom } from '@/lib/types';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard } from '@/components/PageTransition';
 
 const symptomSchema = z.object({
@@ -65,6 +66,7 @@ const commonSymptoms = [
 export default function SymptomsPage() {
   const [symptoms, setSymptoms] = useLocalStorage<Symptom[]>('symptoms', []);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof symptomSchema>>({
@@ -87,7 +89,16 @@ export default function SymptomsPage() {
       date: new Date().toISOString().split('T')[0],
       severity: 5,
     });
+    setShowConfirmation(true);
   }
+
+  useEffect(() => {
+    if (showConfirmation) {
+      const timer = setTimeout(() => setShowConfirmation(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfirmation]);
+
 
   const filteredSymptoms = useMemo(() => {
     return commonSymptoms.filter((s) =>
@@ -106,9 +117,34 @@ export default function SymptomsPage() {
     hover: { scale: 1.05, transition: { duration: 0.2 } },
     tap: { scale: 0.98 }
   };
+  
+  const confirmationVariants = {
+    initial: { opacity: 0, y: 20, scale: 0.95 },
+    animate: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } },
+    exit: { opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3 } },
+  };
 
   return (
     <div className="space-y-8">
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div
+            variants={confirmationVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="fixed bottom-6 right-6 z-50"
+          >
+            <Card className="bg-primary text-primary-foreground">
+              <CardContent className="p-4 flex items-center gap-3">
+                <CheckCircle className="h-6 w-6" />
+                <p className="font-semibold">Symptom Logged</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Card>
         <CardHeader>
           <CardTitle>Select a Symptom</CardTitle>
