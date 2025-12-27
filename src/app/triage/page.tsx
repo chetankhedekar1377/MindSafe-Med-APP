@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, Info, Pill, Bot, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, Info, Pill, Bot, ShieldAlert, HeartPulse, ShieldCheck } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -71,7 +71,6 @@ export default function TriagePage() {
       likelihoods,
     };
     
-    // Check if RL has modified the probabilities. If not, don't send them.
     if (JSON.stringify(baseProbabilities) === JSON.stringify(INITIAL_BASE_PROBABILITIES)) {
       delete initialState.baseProbabilities;
     }
@@ -102,12 +101,10 @@ export default function TriagePage() {
     setIsLoading(false);
   };
 
-  const handleBack = () => {
-    if (triageState && !triageState.redFlag) {
-       setTriageState(null);
-       setPrimarySymptom('');
-       setTriageSummary(null);
-    }
+  const handleRestart = () => {
+    setTriageState(null);
+    setPrimarySymptom('');
+    setTriageSummary(null);
   };
 
   const handleExport = () => {
@@ -180,7 +177,7 @@ export default function TriagePage() {
                         <Input 
                             value={primarySymptom} 
                             onChange={(e) => setPrimarySymptom(e.target.value)} 
-                            placeholder="e.g., Headache"
+                            placeholder="e.g., Headache, Fever, etc."
                             className="text-center"
                             aria-label="Primary symptom"
                         />
@@ -270,8 +267,11 @@ export default function TriagePage() {
                   <div className="space-y-6">
                     <CardContent className="text-center space-y-4">
                       <div className="flex flex-col items-center gap-4 text-primary">
-                        <PartyPopper className="h-12 w-12" />
+                        <ShieldCheck className="h-12 w-12" />
                         <h2 className="text-2xl font-bold">Triage Complete</h2>
+                         <p className="text-muted-foreground max-w-md mx-auto">
+                           The following is an educational summary based on your answers. It is not a medical diagnosis.
+                         </p>
                       </div>
                     </CardContent>
                     
@@ -294,9 +294,6 @@ export default function TriagePage() {
                                       <Bot/>
                                       AI Triage Summary
                                   </CardTitle>
-                                  <CardDescription>
-                                      This is an educational summary, not a medical diagnosis.
-                                  </CardDescription>
                               </CardHeader>
                               <CardContent className="space-y-4">
                                   <div>
@@ -327,69 +324,50 @@ export default function TriagePage() {
                               </CardHeader>
                               <CardContent>
                                 <p className="text-destructive/90">
-                                  Based on this educational analysis, your symptoms may indicate a condition that requires professional evaluation. Over-the-counter options may not be appropriate. It is strongly recommended to consult a healthcare provider for an accurate diagnosis and treatment plan.
+                                  Based on this educational analysis, your symptoms may indicate a condition that requires professional evaluation. Supportive over-the-counter options may not be appropriate. It is strongly recommended to consult a healthcare provider for an accurate diagnosis and treatment plan.
                                 </p>
                               </CardContent>
                           </Card>
                         )}
 
                         {showSupportiveOptions && (
-                          <Card className="border-accent">
+                          <Card className="border-primary/20">
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2">Supportive Options</CardTitle>
+                              <CardTitle className="flex items-center gap-2 text-primary"><HeartPulse /> Supportive Care Options</CardTitle>
                                <CardDescription>
-                                 For general discomfort, some over-the-counter options may be considered. This is not medical advice.
+                                 For general discomfort from mild conditions, some over-the-counter options may be considered. This is for informational purposes and is not medical advice.
                                </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-4 pt-4">
-                              <div className="flex items-start justify-between rounded-lg border bg-background p-4">
-                                 <div className="flex items-start gap-4">
-                                   <Pill className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                                   <div>
-                                     <p className="font-semibold">Pain & Fever Relief</p>
-                                     <p className="text-sm text-muted-foreground">Paracetamol may help with pain and fever.</p>
-                                   </div>
-                                 </div>
-                                 <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="flex-shrink-0">
-                                              <Info className="h-5 w-5 text-muted-foreground" />
-                                          </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p className="max-w-xs">Always follow label instructions. This is not a substitute for medical advice.</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                                 </TooltipProvider>
-                              </div>
-                               <div className="flex items-start justify-between rounded-lg border bg-background p-4">
-                                 <div className="flex items-start gap-4">
-                                   <Pill className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                                   <div>
-                                     <p className="font-semibold">Acidity Relief</p>
-                                     <p className="text-sm text-muted-foreground">Antacids may help with discomfort from acidity.</p>
-                                   </div>
-                                 </div>
-                                 <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="flex-shrink-0">
-                                              <Info className="h-5 w-5 text-muted-foreground" />
-                                          </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p className="max-w-xs">Always follow label instructions. This is not a substitute for medical advice.</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                                 </TooltipProvider>
-                              </div>
+                              <SupportiveOption
+                                name="Pain & Fever Relief"
+                                description="Paracetamol may help manage symptoms like aches and fever."
+                                tooltipText="Always follow the instructions on the label. This is not medical advice or a prescription."
+                              />
+                               <SupportiveOption
+                                name="Acidity Relief"
+                                description="Antacids may help with discomfort from acidity."
+                                tooltipText="Always follow the instructions on the label. This is not a substitute for medical advice."
+                              />
+                               <SupportiveOption
+                                name="Hydration Support"
+                                description="An Oral Rehydration Solution (ORS) can help restore fluids and electrolytes."
+                                tooltipText="Proper hydration is key to recovery. Follow product instructions carefully."
+                              />
+                               <SupportiveOption
+                                name="Allergy Relief"
+                                description="A non-sedating antihistamine may help with allergy symptoms."
+                                tooltipText="Ensure the product is non-sedating. Always follow the instructions on the label."
+                              />
                             </CardContent>
                           </Card>
                         )}
                     </div>
 
                     <CardFooter className="flex-col gap-4 pt-6 px-6">
+                       <Button className="w-full" onClick={handleRestart}>
+                          Start New Triage
+                       </Button>
                       <Button variant="outline" className="w-full" onClick={handleExport}>
                          <Download className="mr-2 h-4 w-4" />
                          Export Results
@@ -404,14 +382,38 @@ export default function TriagePage() {
       
       {triageState && !isCompleted && <div className="flex justify-start">
         <Button
-          onClick={handleBack}
+          onClick={handleRestart}
           disabled={!!triageState?.redFlag}
           variant="outline"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Back
+          Back to Start
         </Button>
       </div>}
     </div>
   );
 }
+
+const SupportiveOption = ({ name, description, tooltipText }: { name: string, description: string, tooltipText: string }) => (
+    <div className="flex items-start justify-between rounded-lg border bg-background p-4">
+      <div className="flex items-start gap-4">
+        <Pill className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+        <div>
+          <p className="font-semibold">{name}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      <TooltipProvider>
+      <Tooltip>
+          <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="flex-shrink-0">
+                  <Info className="h-5 w-5 text-muted-foreground" />
+              </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+              <p className="max-w-xs">{tooltipText}</p>
+          </TooltipContent>
+      </Tooltip>
+      </TooltipProvider>
+  </div>
+);
