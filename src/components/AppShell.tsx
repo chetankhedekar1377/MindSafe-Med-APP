@@ -27,7 +27,7 @@ const pageTitles: { [key: string]: string } = {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const title = pageTitles[pathname] || 'Clarity Care';
+  const title = pageTitles[pathname] || 'MindSafe Med';
 
   return (
     <SidebarProvider>
@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="p-4">
           <a href="/" className="flex items-center gap-2">
             <Logo className="h-8 w-8 text-primary" />
-            <span className="text-lg font-semibold">Clarity Care</span>
+            <span className="text-lg font-semibold">MindSafe Med</span>
           </a>
         </SidebarHeader>
         <SidebarContent>

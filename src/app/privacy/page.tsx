@@ -17,13 +17,13 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">Introduction</h2>
           <p className="text-muted-foreground">
-            Welcome to Clarity Care. We are committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by Clarity Care. All data you enter into this application is stored locally on your device and is not transmitted to any server or third party.
+            Welcome to MindSafe Med. We are committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by MindSafe Med. All data you enter into this application is stored locally on your device and is not transmitted to any server or third party.
           </p>
         </section>
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">Information We Collect</h2>
           <p className="text-muted-foreground">
-            Clarity Care stores the following information on your local device:
+            MindSafe Med stores the following information on your local device:
           </p>
           <ul className="list-disc list-inside text-muted-foreground space-y-1">
             <li><strong>Symptom Data:</strong> Information you log about your symptoms, including name, date, and severity.</li>
@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">Data Storage and Security</h2>
           <p className="text-muted-foreground">
-            All the data you provide to Clarity Care is stored exclusively in your browser's local storage. This means the data resides on your computer or mobile device and is not sent to our servers. We do not have access to your personal health data. It is your responsibility to secure the device you use to access this application.
+            All the data you provide to MindSafe Med is stored exclusively in your browser's local storage. This means the data resides on your computer or mobile device and is not sent to our servers. We do not have access to your personal health data. It is your responsibility to secure the device you use to access this application.
           </p>
         </section>
         <section className="space-y-2">

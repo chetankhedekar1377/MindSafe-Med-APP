@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Clarity Care',
+  title: 'MindSafe Med',
   description: 'Your personal health tracking assistant.',
 };
 
@@ -37,7 +37,7 @@ export default function RootLayout({
             <div className="max-w-2xl mx-auto space-y-2">
               <p className="font-semibold">Disclaimer: Not Medical Advice</p>
               <p>
-                Clarity Care is an informational and educational tool designed to help you track your health. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read on this application.
+                MindSafe Med is an informational and educational tool designed to help you track your health. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read on this application.
               </p>
               <p className="mt-2">
                 <Link href="/privacy" className="underline hover:text-foreground">
