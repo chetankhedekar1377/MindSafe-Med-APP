@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill, Bot, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, Info, Pill, Bot, ShieldAlert } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -321,12 +321,12 @@ export default function TriagePage() {
                                  The following over-the-counter options may help with general discomfort. This is not medical advice.
                                </CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="space-y-2">
                               <div className="flex items-center justify-between rounded-lg border bg-background p-4">
                                  <div className="flex items-center gap-4">
                                    <Pill className="h-6 w-6 text-primary" />
                                    <div>
-                                     <p className="font-semibold">Ibuprofen</p>
+                                     <p className="font-semibold">Paracetamol</p>
                                      <p className="text-sm text-muted-foreground">For pain and fever relief.</p>
                                    </div>
                                  </div>
@@ -338,7 +338,28 @@ export default function TriagePage() {
                                           </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                          <p className="max-w-xs">Always read the label and consult a pharmacist or doctor before taking any new medication.</p>
+                                          <p className="max-w-xs">Always follow the instructions on the label. This is not medical advice.</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                                 </TooltipProvider>
+                              </div>
+                               <div className="flex items-center justify-between rounded-lg border bg-background p-4">
+                                 <div className="flex items-center gap-4">
+                                   <Pill className="h-6 w-6 text-primary" />
+                                   <div>
+                                     <p className="font-semibold">Antacid</p>
+                                     <p className="text-sm text-muted-foreground">For relief from acidity or heartburn.</p>
+                                   </div>
+                                 </div>
+                                 <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon">
+                                              <Info className="h-5 w-5 text-muted-foreground" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p className="max-w-xs">Always follow the instructions on the label. This is not medical advice.</p>
                                       </TooltipContent>
                                   </Tooltip>
                                  </TooltipProvider>
