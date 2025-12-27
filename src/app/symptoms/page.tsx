@@ -111,6 +111,13 @@ export default function SymptomsPage() {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   
+  const handleKeyPress = (event: React.KeyboardEvent, name: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSymptomSelect(name);
+    }
+  };
+
   const cardVariants = {
     initial: { opacity: 0, scale: 0.95 },
     animate: { opacity: 1, scale: 1 },
@@ -161,23 +168,28 @@ export default function SymptomsPage() {
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search for a symptom"
             />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {filteredSymptoms.map((symptom, index) => (
               <MotionCard
                 key={symptom.name}
+                role="button"
+                tabIndex={0}
+                aria-label={`Select ${symptom.name}`}
+                onKeyDown={(e) => handleKeyPress(e, symptom.name)}
                 variants={cardVariants}
                 initial="initial"
                 animate="animate"
                 whileHover="hover"
                 whileTap="tap"
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="cursor-pointer"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={() => handleSymptomSelect(symptom.name)}
               >
                 <CardContent className="flex flex-col items-center justify-center p-4 aspect-square">
-                  <symptom.icon className="h-8 w-8 mb-2 text-primary" />
+                  <symptom.icon className="h-8 w-8 mb-2 text-primary" aria-hidden="true" />
                   <p className="text-sm font-medium text-center">{symptom.name}</p>
                 </CardContent>
               </MotionCard>
@@ -238,6 +250,7 @@ export default function SymptomsPage() {
                           step={1}
                           value={[value]}
                           onValueChange={(vals) => onChange(vals[0])}
+                          aria-label={`Severity slider, current value ${value} out of 10`}
                         />
                       </FormControl>
                       <FormDescription>

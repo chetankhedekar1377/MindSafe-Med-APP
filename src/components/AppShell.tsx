@@ -22,6 +22,7 @@ const pageTitles: { [key: string]: string } = {
   '/medications': 'Medication Log',
   '/appointments': 'Appointments',
   '/insights': 'Health Insights',
+  '/privacy': 'Privacy Policy',
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
