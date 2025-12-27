@@ -1,122 +1,328 @@
 {
   "entities": {
-    "triageSession": {
-      "title": "Triage Session",
-      "description": "Represents a single, anonymous symptom triage session.",
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
       "type": "object",
+      "description": "Represents a user of the Clarity Care application.",
       "properties": {
-        "triageId": {
+        "id": {
           "type": "string",
-          "description": "Unique ID for this triage session."
+          "description": "Unique identifier for the User entity."
         },
-        "primarySymptom": {
+        "email": {
           "type": "string",
-          "description": "The user-reported primary symptom."
+          "description": "User's email address.",
+          "format": "email"
         },
-        "createdAt": {
-          "type": "number",
-          "description": "Timestamp when the session was created."
-        },
-        "completedAt": {
-          "type": "number",
-          "description": "Timestamp when the triage was completed."
-        },
-        "isCompleted": {
-          "type": "boolean",
-          "description": "Whether the triage flow has completed."
-        },
-        "finalState": {
-          "type": "object",
-          "description": "The final state of the triage flow.",
-          "properties": {
-            "questionHistory": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "The text of questions that have already been asked."
-            },
-            "answers": {
-              "type": "array",
-              "items": {
-                "enum": ["Yes", "No"]
-              },
-              "description": "The user's answers to the questions."
-            },
-            "conditionProbabilities": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "condition": {
-                    "type": "string"
-                  },
-                  "probability": {
-                    "type": "number"
-                  }
-                }
-              },
-              "description": "The final probability distribution of possible conditions."
-            },
-            "redFlag": {
-              "type": "object",
-              "properties": {
-                "reason": {
-                  "type": "string"
-                }
-              },
-              "description": "If a red flag was triggered, this contains the reason."
-            },
-            "highestRiskLevel": {
-              "enum": ["GREEN", "YELLOW", "RED"],
-              "description": "The risk level of the most probable condition."
-            }
-          }
-        },
-        "finalVerdict": {
-          "type": "object",
-          "description": "The AI-generated summary provided to the user.",
-          "properties": {
-            "mostProbableCondition": {
-              "type": "string"
-            },
-            "confidenceLevel": {
-              "enum": ["Low", "Moderate", "High"]
-            },
-            "reasoning": {
-              "type": "string"
-            },
-            "nextSteps": {
-              "type": "string"
-            }
-          }
-        },
-        "feedback": {
-          "type": "object",
-          "description": "User-provided feedback on the triage outcome.",
-          "properties": {
-            "outcome": {
-              "enum": ["Better", "Same", "Worse", "Side Effects"]
-            },
-            "feedbackAt": {
-              "type": "number",
-              "description": "Timestamp when the feedback was submitted."
-            }
-          }
+        "name": {
+          "type": "string",
+          "description": "User's full name."
         }
       },
-      "required": ["triageId", "primarySymptom", "createdAt", "isCompleted"]
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "SymptomLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SymptomLog",
+      "type": "object",
+      "description": "Represents a log entry for a user's symptom.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SymptomLog entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N SymptomLog)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date when the symptom was logged.",
+          "format": "date-time"
+        },
+        "symptomName": {
+          "type": "string",
+          "description": "Name of the symptom."
+        },
+        "severity": {
+          "type": "number",
+          "description": "Severity level of the symptom (e.g., 1-10)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any notes about the symptom."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "date",
+        "symptomName",
+        "severity"
+      ]
+    },
+    "Medication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Medication",
+      "type": "object",
+      "description": "Represents a medication that a user is taking.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Medication entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Medication)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the medication."
+        },
+        "dosage": {
+          "type": "string",
+          "description": "Dosage of the medication."
+        },
+        "frequency": {
+          "type": "string",
+          "description": "Frequency of taking the medication."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "dosage",
+        "frequency"
+      ]
+    },
+    "MedicationReminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MedicationReminder",
+      "type": "object",
+      "description": "Represents a reminder for a user to take their medication.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MedicationReminder entity."
+        },
+        "medicationId": {
+          "type": "string",
+          "description": "Reference to Medication. (Relationship: Medication 1:N MedicationReminder)"
+        },
+        "reminderTime": {
+          "type": "string",
+          "description": "Time of day to send the reminder.",
+          "format": "date-time"
+        },
+        "isTaken": {
+          "type": "boolean",
+          "description": "Indicates whether the medication has been taken for this reminder."
+        }
+      },
+      "required": [
+        "id",
+        "medicationId",
+        "reminderTime"
+      ]
+    },
+    "Appointment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Appointment",
+      "type": "object",
+      "description": "Represents a scheduled appointment with a healthcare provider.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Appointment entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Appointment)"
+        },
+        "providerName": {
+          "type": "string",
+          "description": "Name of the healthcare provider."
+        },
+        "appointmentTime": {
+          "type": "string",
+          "description": "Date and time of the appointment.",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes about the appointment."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "providerName",
+        "appointmentTime"
+      ]
+    },
+    "HealthInsight": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HealthInsight",
+      "type": "object",
+      "description": "Represents a personalized health insight generated by the AI tool.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the HealthInsight entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N HealthInsight)"
+        },
+        "generatedText": {
+          "type": "string",
+          "description": "Textual insight generated by the AI."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp when the insight was generated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "generatedText",
+        "timestamp"
+      ]
     }
   },
   "auth": {
-    "providers": []
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
-    "/triageSessions/{sessionId}": {
-      "schema": {
-        "$ref": "#/entities/triageSession"
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection to store user profiles. Path-based ownership; only the user can access their profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
       },
-      "description": "Stores individual, anonymized symptom triage sessions."
-    }
+      {
+        "path": "/users/{userId}/symptomLogs/{symptomLogId}",
+        "definition": {
+          "entityName": "SymptomLog",
+          "schema": {
+            "$ref": "#/backend/entities/SymptomLog"
+          },
+          "description": "Collection to store symptom logs for each user. Path-based ownership; only the user can access their symptom logs.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "symptomLogId",
+              "description": "The unique identifier for the symptom log."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/medications/{medicationId}",
+        "definition": {
+          "entityName": "Medication",
+          "schema": {
+            "$ref": "#/backend/entities/Medication"
+          },
+          "description": "Collection to store medication information for each user. Path-based ownership; only the user can access their medication data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "medicationId",
+              "description": "The unique identifier for the medication."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/medicationReminders/{medicationReminderId}",
+        "definition": {
+          "entityName": "MedicationReminder",
+          "schema": {
+            "$ref": "#/backend/entities/MedicationReminder"
+          },
+          "description": "Collection to store medication reminders for each user. Path-based ownership; only the user can access their medication reminder data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "medicationReminderId",
+              "description": "The unique identifier for the medication reminder."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/appointments/{appointmentId}",
+        "definition": {
+          "entityName": "Appointment",
+          "schema": {
+            "$ref": "#/backend/entities/Appointment"
+          },
+          "description": "Collection to store appointment information for each user. Path-based ownership; only the user can access their appointment data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "appointmentId",
+              "description": "The unique identifier for the appointment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/healthInsights/{healthInsightId}",
+        "definition": {
+          "entityName": "HealthInsight",
+          "schema": {
+            "$ref": "#/backend/entities/HealthInsight"
+          },
+          "description": "Collection to store health insights generated for each user. Path-based ownership; only the user can access their health insight data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "healthInsightId",
+              "description": "The unique identifier for the health insight."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and QAPs. User data and their related entities (SymptomLogs, Medications, MedicationReminders, Appointments, and HealthInsights) are stored under the `/users/{userId}` path, which grants clear path-based ownership, simplifying security rules. This structure facilitates atomic operations (transactions/batches) without needing to `get()` parent data, crucial for maintaining data integrity and consistency.\n\n*   **Authorization Independence**: Achieved through path-based ownership for private user data, eliminating the need for `get()` calls in security rules.\n*   **QAPs (Rules are not Filters)**: Supported by Structural Segregation, where each collection under `/users/{userId}` has a homogeneous security posture, enabling efficient and secure `list` operations. For example, listing all SymptomLogs for a specific user is easily secured via path-based rules without content-based filtering.\n\nThis design promotes clear authorization intent, straightforward security rules, and optimized query performance by avoiding complex rule logic and ensuring each collection serves a distinct security purpose."
   }
 }
