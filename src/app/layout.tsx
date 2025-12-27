@@ -33,15 +33,18 @@ export default function RootLayout({
         <div className="flex flex-col min-h-screen">
           <AppShell>{children}</AppShell>
           <Toaster />
-          <footer className="p-4 md:p-6 text-center text-xs text-muted-foreground mt-auto">
-            <p>
-              Clarity Care is an informational tool and not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
-            </p>
-            <p className="mt-2">
-              <Link href="/privacy" className="underline hover:text-foreground">
-                Privacy Policy
-              </Link>
-            </p>
+          <footer className="p-6 text-center text-xs text-muted-foreground mt-auto border-t">
+            <div className="max-w-2xl mx-auto space-y-2">
+              <p className="font-semibold">Disclaimer: Not Medical Advice</p>
+              <p>
+                Clarity Care is an informational and educational tool designed to help you track your health. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read on this application.
+              </p>
+              <p className="mt-2">
+                <Link href="/privacy" className="underline hover:text-foreground">
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
           </footer>
         </div>
       </body>

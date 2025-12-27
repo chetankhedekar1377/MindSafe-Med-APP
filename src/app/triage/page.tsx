@@ -231,14 +231,14 @@ export default function TriagePage() {
                       >
                          <AlertTriangle className="h-16 w-16 mx-auto text-destructive" />
                       </motion.div>
-                      <h2 className="text-3xl font-bold text-destructive">Urgent Action Required</h2>
+                      <h2 className="text-3xl font-bold text-destructive">Urgent Action Recommended</h2>
                       <p className="text-destructive/90 max-w-md mx-auto">
-                        Based on your answers, your symptoms may require immediate medical attention. {triageState.redFlag?.reason}
+                        Based on your answers, your symptoms may require immediate medical attention. {triageState.redFlag?.reason} This is not a diagnosis. Please consult a healthcare provider for any health concerns.
                       </p>
                     </CardContent>
                     <CardFooter className="flex-col gap-4 p-6">
                         <Button size="lg" className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                            Consult a Doctor Now
+                            Find Urgent Care
                         </Button>
                         <Button variant="outline" className="w-full" onClick={handleExport}>
                            <Download className="mr-2 h-4 w-4" />
@@ -290,7 +290,7 @@ export default function TriagePage() {
                                       </ul>
                                   </div>
                                   <div>
-                                      <p className="text-sm text-muted-foreground">Suggested Next Step</p>
+                                      <p className="text-sm text-muted-foreground">Suggested Next Steps</p>
                                       <p className="text-sm">{triageSummary.nextSteps}</p>
                                   </div>
                               </CardContent>
@@ -307,7 +307,7 @@ export default function TriagePage() {
                               </CardHeader>
                               <CardContent>
                                 <p className="text-destructive/90">
-                                  Based on the potential likelihood of certain conditions (e.g., Bacterial Infection), over-the-counter options may not be suitable. It is recommended to consult a doctor for an accurate diagnosis and treatment plan.
+                                  Based on the analysis, your symptoms may indicate a condition that requires a professional medical evaluation, such as a bacterial infection. Over-the-counter options may not be appropriate. It is strongly recommended to consult a healthcare provider for an accurate diagnosis and treatment plan.
                                 </p>
                               </CardContent>
                           </Card>
@@ -318,7 +318,7 @@ export default function TriagePage() {
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">Supportive Options</CardTitle>
                                <CardDescription>
-                                 The following over-the-counter options may help with general discomfort. This is not medical advice.
+                                 For general discomfort, some over-the-counter options may be considered. This is not medical advice.
                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-2">
@@ -327,7 +327,7 @@ export default function TriagePage() {
                                    <Pill className="h-6 w-6 text-primary" />
                                    <div>
                                      <p className="font-semibold">Paracetamol</p>
-                                     <p className="text-sm text-muted-foreground">For pain and fever relief.</p>
+                                     <p className="text-sm text-muted-foreground">May help with pain and fever relief.</p>
                                    </div>
                                  </div>
                                  <TooltipProvider>
@@ -338,7 +338,7 @@ export default function TriagePage() {
                                           </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                          <p className="max-w-xs">Always follow the instructions on the label. This is not medical advice.</p>
+                                          <p className="max-w-xs">Always follow the instructions on the label. This information is not a substitute for medical advice.</p>
                                       </TooltipContent>
                                   </Tooltip>
                                  </TooltipProvider>
@@ -348,7 +348,7 @@ export default function TriagePage() {
                                    <Pill className="h-6 w-6 text-primary" />
                                    <div>
                                      <p className="font-semibold">Antacid</p>
-                                     <p className="text-sm text-muted-foreground">For relief from acidity or heartburn.</p>
+                                     <p className="text-sm text-muted-foreground">May help with relief from acidity.</p>
                                    </div>
                                  </div>
                                  <TooltipProvider>
@@ -359,7 +359,7 @@ export default function TriagePage() {
                                           </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                          <p className="max-w-xs">Always follow the instructions on the label. This is not medical advice.</p>
+                                          <p className="max-w-xs">Always follow the instructions on the label. This information is not a substitute for medical advice.</p>
                                       </TooltipContent>
                                   </Tooltip>
                                  </TooltipProvider>
