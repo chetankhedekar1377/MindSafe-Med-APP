@@ -93,7 +93,7 @@ export default function MedicationsPage() {
           <DialogHeader>
             <DialogTitle>Add New Medication</DialogTitle>
             <DialogDescription>
-              Enter the details of your new medication.
+              Enter the details of your medication.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -167,7 +167,7 @@ export default function MedicationsPage() {
                 <CardTitle>Your Medication Log</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">You haven't added any medications yet. Click "Add Medication" to get started.</p>
+                <p className="text-muted-foreground">You haven't added any medications yet. Click "Add Medication" to start.</p>
             </CardContent>
         </Card>
       ) : (
@@ -192,8 +192,8 @@ export default function MedicationsPage() {
                         onCheckedChange={() => toggleTaken(med.id)}
                         aria-label={`Mark ${med.name} as taken`}
                     />
-                    <Label htmlFor={`taken-${med.id}`} className="cursor-pointer">
-                        {med.takenToday ? 'Taken' : 'Mark as Taken'}
+                    <Label htmlFor={`taken-${med.id}`} className="cursor-pointer text-sm">
+                        {med.takenToday ? 'Taken Today' : 'Mark as Taken'}
                     </Label>
                 </div>
               </CardFooter>

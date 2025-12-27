@@ -95,7 +95,7 @@ export default function AppointmentsPage() {
           <DialogHeader>
             <DialogTitle>New Appointment</DialogTitle>
             <DialogDescription>
-              Add a new doctor's appointment to your schedule.
+              Add a doctor's appointment to your schedule.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -190,7 +190,7 @@ function AppointmentList({ appointments, title }: { appointments: Appointment[],
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No appointments here. Click "Schedule Appointment" to add one.</p>
+          <p className="text-muted-foreground">No appointments found.</p>
         </CardContent>
       </Card>
     );

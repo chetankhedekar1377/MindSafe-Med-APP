@@ -32,10 +32,10 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0)}>
         <Card className="w-full overflow-hidden">
-          <div className="relative h-52 w-full">
+          <div className="relative h-48 sm:h-52 w-full">
             {heroImage && (
               <Image
                 src={heroImage.imageUrl}
@@ -43,6 +43,7 @@ export default function DashboardPage() {
                 fill
                 className="object-cover"
                 data-ai-hint={heroImage.imageHint}
+                priority
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -50,22 +51,16 @@ export default function DashboardPage() {
               <h1 className="text-3xl font-bold text-white">
                 Welcome to Clarity Care
               </h1>
-              <p className="text-white/90">
-                Your calm, clear path to managing your health.
+              <p className="text-white/90 mt-1">
+                Your path to managing your health.
               </p>
             </div>
           </div>
         </Card>
       </motion.div>
-
-      <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.1)}>
-        <TriageFeedback />
-      </motion.div>
       
-      <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.1)}>
-        <Feedback />
-      </motion.div>
-
+      <TriageFeedback />
+      <Feedback />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.2)}>
@@ -76,18 +71,18 @@ export default function DashboardPage() {
                 Symptom Tracker
               </CardTitle>
               <CardDescription>
-                Log your symptoms and monitor them over time.
+                Log symptoms to monitor over time.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <p>
-                Keep a record of your symptoms to identify patterns and share with your doctor.
+                Keep a record to identify patterns and share with your doctor.
               </p>
             </CardContent>
             <CardContent>
               <Button asChild className="w-full">
                 <Link href="/symptoms">
-                  Go to Symptoms <ArrowRight />
+                  Track Symptoms <ArrowRight />
                 </Link>
               </Button>
             </CardContent>
@@ -107,13 +102,13 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="flex-grow">
               <p>
-                Track your medications and stay on top of your treatment plan.
+                Stay on top of your treatment plan by tracking your medications.
               </p>
             </CardContent>
             <CardContent>
               <Button asChild className="w-full">
                 <Link href="/medications">
-                  Go to Medications <ArrowRight />
+                  Log Medications <ArrowRight />
                 </Link>
               </Button>
             </CardContent>
@@ -133,13 +128,13 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="flex-grow">
               <p>
-                Schedule and manage appointments so you never miss a visit.
+                Schedule and manage appointments so you never miss a check-up.
               </p>
             </CardContent>
             <CardContent>
               <Button asChild className="w-full">
                 <Link href="/appointments">
-                  Go to Appointments <ArrowRight />
+                  View Appointments <ArrowRight />
                 </Link>
               </Button>
             </CardContent>

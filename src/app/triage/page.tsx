@@ -28,7 +28,6 @@ export default function TriagePage() {
   const [triageSummary, setTriageSummary] = useState<TriageSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [primarySymptom, setPrimarySymptom] = useState('');
   const [ , setLastTriage] = useLocalStorage<TriageState | null>('lastTriage', null);
 
@@ -56,7 +55,6 @@ export default function TriagePage() {
     e.preventDefault();
     if (!primarySymptom) return;
     setIsLoading(true);
-    setError(null);
     setTriageSummary(null);
     const initialState: TriageState = {
       triageId: '', // Will be set by the flow
@@ -134,7 +132,7 @@ export default function TriagePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'triage-results.json';
+    a.download = `triage-results-${new Date().toISOString()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -142,14 +140,14 @@ export default function TriagePage() {
 
     toast({
         title: "Results Exported",
-        description: "Your triage results have been downloaded.",
+        description: "Your triage results have been downloaded as a JSON file.",
     })
   }
 
   const cardVariants = {
-    initial: { opacity: 0, x: 50 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -50 },
+    initial: { opacity: 0, x: 30, scale: 0.98 },
+    animate: { opacity: 1, x: 0, scale: 1 },
+    exit: { opacity: 0, x: -30, scale: 0.98 },
   };
 
   const progress = triageState ? (triageState.questionHistory.length / 5) * 100 : 0;
@@ -161,14 +159,14 @@ export default function TriagePage() {
 
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="mx-auto max-w-2xl space-y-6">
        <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle>Health Triage</CardTitle>
            <div className="pt-4">
              <Progress value={progress} />
              <p className="text-sm text-muted-foreground pt-2">
-                {triageState && !triageState.isCompleted ? `Step ${triageState.questionHistory.length + 1} of 5` : 'Step 1 of 5'}
+                {triageState && !triageState.isCompleted ? `Step ${triageState.questionHistory.length + 1} of up to 5` : 'Start below'}
              </p>
            </div>
         </CardHeader>
@@ -177,21 +175,22 @@ export default function TriagePage() {
              <motion.div key="primary-symptom" variants={cardVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }}>
                 <CardContent className="text-center space-y-4">
                     <h2 className="text-2xl font-semibold">What is your primary symptom?</h2>
-                    <p className="text-muted-foreground">Describe the main issue you are experiencing, e.g., "headache", "sore throat".</p>
+                    <p className="text-muted-foreground">Describe the main issue you're experiencing.</p>
                     <form onSubmit={handlePrimarySymptomSubmit} className="flex gap-2">
                         <Input 
                             value={primarySymptom} 
                             onChange={(e) => setPrimarySymptom(e.target.value)} 
                             placeholder="e.g., Headache"
                             className="text-center"
+                            aria-label="Primary symptom"
                         />
-                        <Button type="submit" disabled={!primarySymptom}>Start</Button>
+                        <Button type="submit" disabled={!primarySymptom}>Start Triage</Button>
                     </form>
                 </CardContent>
              </motion.div>
           ) : isLoading ? (
              <CardContent key="loading">
-                <div className="space-y-8">
+                <div className="space-y-8 py-4">
                     <Skeleton className="h-20 w-full" />
                     <div className="flex justify-center gap-4">
                         <Skeleton className="h-16 w-32" />
@@ -207,7 +206,7 @@ export default function TriagePage() {
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
                   className="space-y-8"
                 >
                   <p className="text-2xl font-semibold text-center h-20 flex items-center justify-center">
@@ -254,7 +253,7 @@ export default function TriagePage() {
                       </motion.div>
                       <h2 className="text-3xl font-bold text-destructive">Urgent Action Recommended</h2>
                       <p className="text-destructive/90 max-w-md mx-auto">
-                        Based on your answers, your symptoms may require immediate medical attention. {triageState.redFlag?.reason} This is not a diagnosis. Please consult a healthcare provider for any health concerns.
+                        Based on your answers, your symptoms may require immediate medical attention. This tool is not a substitute for professional medical advice.
                       </p>
                     </CardContent>
                     <CardFooter className="flex-col gap-4 p-6">
@@ -328,7 +327,7 @@ export default function TriagePage() {
                               </CardHeader>
                               <CardContent>
                                 <p className="text-destructive/90">
-                                  Based on the analysis, your symptoms may indicate a condition that requires a professional medical evaluation, such as a bacterial infection. Over-the-counter options may not be appropriate. It is strongly recommended to consult a healthcare provider for an accurate diagnosis and treatment plan.
+                                  Based on this educational analysis, your symptoms may indicate a condition that requires professional evaluation. Over-the-counter options may not be appropriate. It is strongly recommended to consult a healthcare provider for an accurate diagnosis and treatment plan.
                                 </p>
                               </CardContent>
                           </Card>
@@ -342,45 +341,45 @@ export default function TriagePage() {
                                  For general discomfort, some over-the-counter options may be considered. This is not medical advice.
                                </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-2">
-                              <div className="flex items-center justify-between rounded-lg border bg-background p-4">
-                                 <div className="flex items-center gap-4">
-                                   <Pill className="h-6 w-6 text-primary" />
+                            <CardContent className="grid gap-4 pt-4">
+                              <div className="flex items-start justify-between rounded-lg border bg-background p-4">
+                                 <div className="flex items-start gap-4">
+                                   <Pill className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                                    <div>
-                                     <p className="font-semibold">Paracetamol</p>
-                                     <p className="text-sm text-muted-foreground">May help with pain and fever relief.</p>
+                                     <p className="font-semibold">Pain & Fever Relief</p>
+                                     <p className="text-sm text-muted-foreground">Paracetamol may help with pain and fever.</p>
                                    </div>
                                  </div>
                                  <TooltipProvider>
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon">
+                                          <Button variant="ghost" size="icon" className="flex-shrink-0">
                                               <Info className="h-5 w-5 text-muted-foreground" />
                                           </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                          <p className="max-w-xs">Always follow the instructions on the label. This information is not a substitute for medical advice.</p>
+                                          <p className="max-w-xs">Always follow label instructions. This is not a substitute for medical advice.</p>
                                       </TooltipContent>
                                   </Tooltip>
                                  </TooltipProvider>
                               </div>
-                               <div className="flex items-center justify-between rounded-lg border bg-background p-4">
-                                 <div className="flex items-center gap-4">
-                                   <Pill className="h-6 w-6 text-primary" />
+                               <div className="flex items-start justify-between rounded-lg border bg-background p-4">
+                                 <div className="flex items-start gap-4">
+                                   <Pill className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                                    <div>
-                                     <p className="font-semibold">Antacid</p>
-                                     <p className="text-sm text-muted-foreground">May help with relief from acidity.</p>
+                                     <p className="font-semibold">Acidity Relief</p>
+                                     <p className="text-sm text-muted-foreground">Antacids may help with discomfort from acidity.</p>
                                    </div>
                                  </div>
                                  <TooltipProvider>
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon">
+                                          <Button variant="ghost" size="icon" className="flex-shrink-0">
                                               <Info className="h-5 w-5 text-muted-foreground" />
                                           </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                          <p className="max-w-xs">Always follow the instructions on the label. This information is not a substitute for medical advice.</p>
+                                          <p className="max-w-xs">Always follow label instructions. This is not a substitute for medical advice.</p>
                                       </TooltipContent>
                                   </Tooltip>
                                  </TooltipProvider>
@@ -413,12 +412,6 @@ export default function TriagePage() {
           Back
         </Button>
       </div>}
-       {triageState?.redFlag && !isCompleted && (
-        <p className="text-sm text-center text-destructive">
-          <AlertTriangle className="inline h-4 w-4 mr-1" />
-          Due to a critical answer, you cannot go back.
-        </p>
-      )}
     </div>
   );
 }

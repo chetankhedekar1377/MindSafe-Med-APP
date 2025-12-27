@@ -121,7 +121,7 @@ export default function SymptomsPage() {
   const cardVariants = {
     initial: { opacity: 0, scale: 0.95 },
     animate: { opacity: 1, scale: 1 },
-    hover: { scale: 1.05, transition: { duration: 0.2 } },
+    hover: { scale: 1.03, transition: { duration: 0.2 } },
     tap: { scale: 0.98 }
   };
   
@@ -132,7 +132,7 @@ export default function SymptomsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <AnimatePresence>
         {showConfirmation && (
           <motion.div
@@ -142,7 +142,7 @@ export default function SymptomsPage() {
             exit="exit"
             className="fixed bottom-6 right-6 z-50"
           >
-            <Card className="bg-primary text-primary-foreground">
+            <Card className="bg-primary text-primary-foreground shadow-lg">
               <CardContent className="p-4 flex items-center gap-3">
                 <CheckCircle className="h-6 w-6" />
                 <p className="font-semibold">Symptom Logged</p>
@@ -156,7 +156,7 @@ export default function SymptomsPage() {
         <CardHeader>
           <CardTitle>Select a Symptom</CardTitle>
           <CardDescription>
-            Choose a common symptom or search to log it quickly.
+            Choose a common symptom or search below to log it quickly.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,7 +173,7 @@ export default function SymptomsPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {filteredSymptoms.map((symptom, index) => (
-              <MotionCard
+              <motion.div
                 key={symptom.name}
                 role="button"
                 tabIndex={0}
@@ -185,20 +185,22 @@ export default function SymptomsPage() {
                 whileHover="hover"
                 whileTap="tap"
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
                 onClick={() => handleSymptomSelect(symptom.name)}
               >
-                <CardContent className="flex flex-col items-center justify-center p-4 aspect-square">
-                  <symptom.icon className="h-8 w-8 mb-2 text-primary" aria-hidden="true" />
-                  <p className="text-sm font-medium text-center">{symptom.name}</p>
-                </CardContent>
-              </MotionCard>
+                <Card className="h-full w-full">
+                  <CardContent className="flex flex-col items-center justify-center p-4 aspect-square">
+                    <symptom.icon className="h-8 w-8 mb-2 text-primary" aria-hidden="true" />
+                    <p className="text-sm font-medium text-center">{symptom.name}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <div ref={formRef} />
+      <div ref={formRef} className="scroll-mt-4" />
 
       <MotionCard initial="initial" animate="animate" variants={cardVariants} transition={{delay: 0.1}}>
         <CardHeader>
@@ -296,7 +298,7 @@ export default function SymptomsPage() {
                           {symptom.name}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(symptom.date), 'MMMM d, yyyy')}
+                          {format(new Date(symptom.date), 'PP')}
                         </TableCell>
                         <TableCell className="text-right">
                           {symptom.severity}/10
@@ -307,7 +309,7 @@ export default function SymptomsPage() {
                   <TableRow>
                     <TableCell
                       colSpan={3}
-                      className="text-center text-muted-foreground"
+                      className="text-center text-muted-foreground h-24"
                     >
                       No symptoms logged yet.
                     </TableCell>
