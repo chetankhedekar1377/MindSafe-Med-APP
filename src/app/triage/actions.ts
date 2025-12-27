@@ -1,9 +1,10 @@
 'use server';
 
-import { TriageState, TriageStateSchema, symptomTriageFlow } from "@/ai/flows/symptom-triage";
-import { generateTriageSummary as generateTriageSummaryFlow, TriageSummary, TriageSummarySchema } from "@/ai/flows/generate-triage-summary";
+import { symptomTriageFlow, type TriageState } from "@/ai/flows/symptom-triage";
+import { generateTriageSummary as generateTriageSummaryFlow, type TriageSummary } from "@/ai/flows/generate-triage-summary";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
+import { TriageStateSchema, TriageSummarySchema } from "@/lib/schemas";
 
 export async function getNextQuestion(currentState: TriageState): Promise<TriageState> {
   try {

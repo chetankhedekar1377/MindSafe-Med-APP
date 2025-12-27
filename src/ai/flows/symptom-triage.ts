@@ -6,47 +6,15 @@
  * It uses a Bayesian probability engine to update the likelihood of various conditions.
  *
  * - symptomTriageFlow - A function that progresses the triage state.
- * - TriageStateSchema - The Zod schema for the triage state object.
  * - TriageState - The TypeScript type for the triage state.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+import { TriageStateSchema } from '@/lib/schemas';
+import type { QuestionSchema } from '@/lib/schemas';
 
-
-const QuestionSchema = z.object({
-  id: z.string(),
-  text: z.string(),
-  redFlag: z.boolean().describe('Whether a "Yes" answer to this question constitutes a red flag.'),
-});
-
-const RedFlagSchema = z.object({
-  reason: z.string(),
-});
-
-const ConditionProbabilitySchema = z.object({
-  condition: z.string(),
-  probability: z.number(),
-});
-
-type RiskLevel = 'GREEN' | 'YELLOW' | 'RED';
-
-export const TriageStateSchema = z.object({
-  triageId: z.string().describe('Unique ID for this triage session.'),
-  completedAt: z.number().nullable().describe('Timestamp when the triage was completed.'),
-  primarySymptom: z.string().describe('The user-reported primary symptom.'),
-  questionHistory: z.array(z.string()).describe('The text of questions that have already been asked.'),
-  answers: z.array(z.enum(['Yes', 'No'])).describe('The user\'s answers to the questions in `questionHistory`.'),
-  isCompleted: z.boolean().describe('Whether the triage flow has completed.'),
-  redFlag: RedFlagSchema.nullable().describe('If a red flag was triggered, this contains the reason.'),
-  currentQuestion: QuestionSchema.nullable().describe('The current question to be asked to the user.'),
-  conditionProbabilities: z.array(ConditionProbabilitySchema).describe('The current probability distribution of possible conditions.'),
-  highestRiskLevel: z.enum(['GREEN', 'YELLOW', 'RED']).nullable().describe('The risk level of the most probable condition.'),
-  // Adding the learned probabilities to the input schema so they can be passed in.
-  baseProbabilities: z.record(z.number()).optional(),
-  likelihoods: z.record(z.record(z.number())).optional(),
-});
 
 export type TriageState = z.infer<typeof TriageStateSchema>;
 
@@ -110,6 +78,8 @@ const CONDITIONS = {
   ALLERGIES: 'Allergies',
   STRESS: 'Stress',
 };
+
+type RiskLevel = 'GREEN' | 'YELLOW' | 'RED';
 
 const CONDITION_RISK_LEVEL: Record<string, RiskLevel> = {
   [CONDITIONS.VIRAL_INFECTION]: 'YELLOW',

@@ -6,14 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { TriageStateSchema } from './symptom-triage';
-
-export const TriageSummarySchema = z.object({
-  mostProbableCondition: z.string().describe('The single most probable condition based on the triage. If probabilities are very close, choose the one that is slightly more common or benign.'),
-  confidenceLevel: z.enum(['Low', 'Moderate', 'High']).describe('An assessment of the confidence in the most probable condition, based on the final probabilities.'),
-  reasoning: z.string().describe('A brief, bulleted list explaining why this condition is likely, referencing specific answers. E.g., "- Fever and cough are common in viral infections." Keep it simple and educational.'),
-  nextSteps: z.string().describe('A safe, non-prescriptive next step for the user. Frame it as a gentle suggestion. E.g., "For general comfort, you might consider resting and hydrating. An over-the-counter pain reliever may help with discomfort." Always end with a sentence like "If your symptoms persist or worsen, it is always a good idea to consult a healthcare provider for an accurate diagnosis."'),
-});
+import { TriageStateSchema, TriageSummarySchema } from '@/lib/schemas';
+import type { TriageState } from './symptom-triage';
 
 export type TriageSummary = z.infer<typeof TriageSummarySchema>;
 
@@ -54,7 +48,7 @@ export const generateTriageSummary = ai.defineFlow(
     inputSchema: TriageStateSchema,
     outputSchema: TriageSummarySchema,
   },
-  async (finalState) => {
+  async (finalState: TriageState) => {
     const { output } = await triageSummaryPrompt(finalState);
     return output!;
   }

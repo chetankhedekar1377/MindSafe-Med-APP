@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Input } from '@/components/ui/input';
 import { getNextQuestion, generateTriageSummary } from './actions';
-import { TriageState, TriageStateSchema } from "@/ai/flows/symptom-triage";
+import type { TriageState } from "@/ai/flows/symptom-triage";
 import type { TriageSummary } from '@/ai/flows/generate-triage-summary';
 import { Skeleton } from '@/components/ui/skeleton';
 import useLocalStorage from '@/hooks/use-local-storage';
