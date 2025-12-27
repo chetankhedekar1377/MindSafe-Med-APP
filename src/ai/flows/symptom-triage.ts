@@ -43,6 +43,9 @@ export const TriageStateSchema = z.object({
   currentQuestion: QuestionSchema.nullable().describe('The current question to be asked to the user.'),
   conditionProbabilities: z.array(ConditionProbabilitySchema).describe('The current probability distribution of possible conditions.'),
   highestRiskLevel: z.enum(['GREEN', 'YELLOW', 'RED']).nullable().describe('The risk level of the most probable condition.'),
+  // Adding the learned probabilities to the input schema so they can be passed in.
+  baseProbabilities: z.record(z.number()).optional(),
+  likelihoods: z.record(z.record(z.number())).optional(),
 });
 
 export type TriageState = z.infer<typeof TriageStateSchema>;
@@ -148,6 +151,7 @@ const MAX_QUESTIONS = 5;
  */
 function updateProbabilities(
   currentProbs: Record<string, number>,
+  likelihoods: Record<string, Record<string, number>>,
   questionId: string,
   answer: 'Yes' | 'No'
 ): Record<string, number> {
@@ -159,7 +163,7 @@ function updateProbabilities(
     
     // Likelihood P(Answer|Condition)
     // Get the likelihood of a 'Yes' answer for this question given the condition.
-    const yesLikelihood = LIKELIHOODS[questionId]?.[condition] || 0.1; // Default to a small probability if not defined.
+    const yesLikelihood = likelihoods[questionId]?.[condition] || 0.1; // Default to a small probability if not defined.
     const likelihood = answer === 'Yes' ? yesLikelihood : 1 - yesLikelihood;
 
     const posterior = likelihood * prior;
@@ -186,12 +190,16 @@ export const symptomTriageFlow = ai.defineFlow(
     outputSchema: TriageStateSchema,
   },
   async (state) => {
+    // Determine which probabilities to use: learned or initial.
+    const baseProbabilitiesToUse = state.baseProbabilities || BASE_PROBABILITIES;
+    const likelihoodsToUse = state.likelihoods || LIKELIHOODS;
+    
     // 1. Initialize probabilities and ID if this is the first step
     if (state.questionHistory.length === 0) {
       if (!state.triageId) {
         state.triageId = uuidv4();
       }
-      state.conditionProbabilities = Object.entries(BASE_PROBABILITIES).map(([condition, probability]) => ({
+      state.conditionProbabilities = Object.entries(baseProbabilitiesToUse).map(([condition, probability]) => ({
         condition,
         probability,
       }));
@@ -222,7 +230,7 @@ export const symptomTriageFlow = ai.defineFlow(
           return acc;
         }, {} as Record<string, number>);
 
-        const newProbsMap = updateProbabilities(currentProbsMap, lastQuestionObject.id, lastAnswer);
+        const newProbsMap = updateProbabilities(currentProbsMap, likelihoodsToUse, lastQuestionObject.id, lastAnswer);
 
         state.conditionProbabilities = Object.entries(newProbsMap).map(([condition, probability]) => ({
           condition,
@@ -266,6 +274,10 @@ export const symptomTriageFlow = ai.defineFlow(
             state.highestRiskLevel = CONDITION_RISK_LEVEL[mostLikelyCondition] || 'YELLOW';
         }
     }
+
+    // Clean up RL-specific fields before returning state.
+    delete state.baseProbabilities;
+    delete state.likelihoods;
 
     return state;
   }

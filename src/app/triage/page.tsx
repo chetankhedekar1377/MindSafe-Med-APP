@@ -21,6 +21,7 @@ import { TriageState, TriageStateSchema } from "@/ai/flows/symptom-triage";
 import type { TriageSummary } from '@/ai/flows/generate-triage-summary';
 import { Skeleton } from '@/components/ui/skeleton';
 import useLocalStorage from '@/hooks/use-local-storage';
+import { useReinforcementLearning } from '@/hooks/useReinforcementLearning';
 
 export default function TriagePage() {
   const [triageState, setTriageState] = useState<TriageState | null>(null);
@@ -30,6 +31,8 @@ export default function TriagePage() {
   const [error, setError] = useState<string | null>(null);
   const [primarySymptom, setPrimarySymptom] = useState('');
   const [ , setLastTriage] = useLocalStorage<TriageState | null>('lastTriage', null);
+
+  const { baseProbabilities, likelihoods, INITIAL_BASE_PROBABILITIES, INITIAL_LIKELIHOODS } = useReinforcementLearning();
   
   const [refs, createRipple] = useRipple();
   const { toast } = useToast();
@@ -66,7 +69,18 @@ export default function TriagePage() {
       conditionProbabilities: [],
       highestRiskLevel: null,
       completedAt: null,
+      baseProbabilities,
+      likelihoods,
     };
+    
+    // Check if RL has modified the probabilities. If not, don't send them.
+    if (JSON.stringify(baseProbabilities) === JSON.stringify(INITIAL_BASE_PROBABILITIES)) {
+      delete initialState.baseProbabilities;
+    }
+    if (JSON.stringify(likelihoods) === JSON.stringify(INITIAL_LIKELIHOODS)) {
+       delete initialState.likelihoods;
+    }
+
     const nextState = await getNextQuestion(initialState);
     setTriageState(nextState);
     setIsLoading(false);
