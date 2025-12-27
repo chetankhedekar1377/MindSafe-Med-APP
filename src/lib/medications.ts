@@ -16,6 +16,11 @@ export const commonMedications: MedicationInfo[] = [
     description: 'A nonsteroidal anti-inflammatory drug (NSAID) for pain, fever, and inflammation.',
   },
   {
+    name: 'Aspirin',
+    use: 'Pain, Fever & Anti-inflammatory',
+    description: 'Used for pain, fever, and inflammation. Not recommended for children.',
+  },
+  {
     name: 'Antacid',
     use: 'Acidity & Heartburn',
     description: 'Neutralizes stomach acid to relieve heartburn and indigestion.',
@@ -31,9 +36,34 @@ export const commonMedications: MedicationInfo[] = [
     description: 'An antihistamine for allergy symptoms. Can cause drowsiness in some people.',
   },
   {
+    name: 'Diphenhydramine',
+    use: 'Allergies & Sleep Aid',
+    description: 'An antihistamine that can treat allergy symptoms and insomnia. Causes drowsiness.',
+  },
+  {
+    name: 'Dextromethorphan',
+    use: 'Cough Suppressant',
+    description: 'Used to relieve a dry, hacking cough. Does not treat the cause of the cough.',
+  },
+  {
+    name: 'Guaifenesin',
+    use: 'Expectorant (Chest Congestion)',
+    description: 'Helps loosen mucus and thin bronchial secretions to make coughs more productive.',
+  },
+  {
+    name: 'Loperamide',
+    use: 'Diarrhea',
+    description: 'Slows down digestion to help reduce the frequency of diarrhea.',
+  },
+  {
     name: 'Oral Rehydration Solution (ORS)',
     use: 'Dehydration',
     description: 'Used to replace fluids and electrolytes lost during diarrhea or vomiting.',
+  },
+  {
+    name: 'Hydrocortisone Cream (1%)',
+    use: 'Topical Steroid',
+    description: 'For temporary relief of minor skin irritations, itching, and rashes.',
   },
   {
     name: 'Other',
