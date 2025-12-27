@@ -22,10 +22,10 @@ import {
 import {
   PlusCircle,
   Search,
-  Headache as HeadacheIcon,
+  Frown as HeadacheIcon,
   Thermometer,
   Wind,
-  Stomach,
+  CircleAlert as NauseaIcon,
   Heart,
   Smile,
 } from 'lucide-react';
@@ -57,7 +57,7 @@ const commonSymptoms = [
   { name: 'Headache', icon: HeadacheIcon },
   { name: 'Fever', icon: Thermometer },
   { name: 'Cough', icon: Wind },
-  { name: 'Nausea', icon: Stomach },
+  { name: 'Nausea', icon: NauseaIcon },
   { name: 'Fatigue', icon: Heart }, // Using Heart as a proxy for energy/fatigue
   { name: 'Dizziness', icon: Smile }, // Using Smile as a proxy for feeling woozy
 ];
