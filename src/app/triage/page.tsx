@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
+import { useToast } from '@/hooks/use-toast';
 
 const triageQuestions = [
   { id: 1, text: 'Are you experiencing severe difficulty breathing?', redFlag: true },
@@ -24,6 +25,7 @@ export default function TriagePage() {
   const [answers, setAnswers] = useState<Answer[]>(Array(triageQuestions.length).fill(null));
   const [backtrackingDisabled, setBacktrackingDisabled] = useState(false);
   const [refs, createRipple] = useRipple();
+  const { toast } = useToast();
 
   const handleAnswer = (answer: Answer) => {
     const newAnswers = [...answers];
@@ -35,7 +37,6 @@ export default function TriagePage() {
       setBacktrackingDisabled(true);
     }
 
-    // Move to next question
     if (currentQuestionIndex < triageQuestions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
@@ -46,6 +47,28 @@ export default function TriagePage() {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
+  
+  const handleExport = () => {
+    const results = triageQuestions.map((q, i) => ({
+        question: q.text,
+        answer: answers[i] || "Not answered",
+    }));
+    
+    const blob = new Blob([JSON.stringify({ triageResults: results }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'triage-results.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+        title: "Results Exported",
+        description: "Your triage results have been downloaded.",
+    })
+  }
 
   const progress = (currentQuestionIndex / triageQuestions.length) * 100;
   const isCompleted = currentQuestionIndex === triageQuestions.length;
@@ -72,60 +95,66 @@ export default function TriagePage() {
              </p>
            </div>
         </CardHeader>
-        <CardContent>
-          <AnimatePresence mode="wait">
-            {!isCompleted ? (
-              <motion.div
-                key={currentQuestionIndex}
-                variants={cardVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{ duration: 0.3 }}
-                className="space-y-8"
-              >
-                <p className="text-2xl font-semibold text-center h-20 flex items-center justify-center">
-                  {triageQuestions[currentQuestionIndex].text}
-                </p>
-                <div className="flex justify-center gap-4">
-                  <Button
-                    ref={(el) => (refs.current['yes-btn'] = el)}
-                    onClick={(e) => { createRipple(e, 'yes-btn'); handleAnswer('Yes'); }}
-                    className="relative overflow-hidden w-32 h-16 text-lg"
-                    size="lg"
-                  >
-                    Yes
-                  </Button>
-                  <Button
-                    ref={(el) => (refs.current['no-btn'] = el)}
-                    onClick={(e) => { createRipple(e, 'no-btn'); handleAnswer('No'); }}
-                    className="relative overflow-hidden w-32 h-16 text-lg"
-                    variant="secondary"
-                    size="lg"
-                  >
-                    No
-                  </Button>
-                </div>
-              </motion.div>
-            ) : (
+        <AnimatePresence mode="wait">
+          {!isCompleted ? (
+            <CardContent key="questions">
                 <motion.div
-                  key="completion"
+                  key={currentQuestionIndex}
                   variants={cardVariants}
                   initial="initial"
                   animate="animate"
                   exit="exit"
                   transition={{ duration: 0.3 }}
-                  className="text-center space-y-4"
+                  className="space-y-8"
                 >
-                  {redFlagTriggered ? (
-                    <div className="flex flex-col items-center gap-4 text-destructive">
-                      <AlertTriangle className="h-12 w-12" />
-                      <h2 className="text-2xl font-bold">Urgent Action Required</h2>
-                      <p>
-                        Based on your answers, we recommend seeking medical attention immediately. Please contact your doctor or proceed to the nearest emergency room.
-                      </p>
-                    </div>
-                  ) : (
+                  <p className="text-2xl font-semibold text-center h-20 flex items-center justify-center">
+                    {triageQuestions[currentQuestionIndex].text}
+                  </p>
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      ref={(el) => (refs.current['yes-btn'] = el)}
+                      onClick={(e) => { createRipple(e, 'yes-btn'); handleAnswer('Yes'); }}
+                      className="relative overflow-hidden w-32 h-16 text-lg"
+                      size="lg"
+                    >
+                      Yes
+                    </Button>
+                    <Button
+                      ref={(el) => (refs.current['no-btn'] = el)}
+                      onClick={(e) => { createRipple(e, 'no-btn'); handleAnswer('No'); }}
+                      className="relative overflow-hidden w-32 h-16 text-lg"
+                      variant="secondary"
+                      size="lg"
+                    >
+                      No
+                    </Button>
+                  </div>
+                </motion.div>
+            </CardContent>
+          ) : (
+              <motion.div
+                key="completion"
+                variants={cardVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+              >
+                {redFlagTriggered ? (
+                  <CardContent className="text-center space-y-4 bg-destructive/10 p-6">
+                    <motion.div
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                       <AlertTriangle className="h-16 w-16 mx-auto text-destructive" />
+                    </motion.div>
+                    <h2 className="text-3xl font-bold text-destructive">Urgent Action Required</h2>
+                    <p className="text-destructive/90 max-w-md mx-auto">
+                      Based on your answers, your symptoms may require immediate medical attention. Please consult a healthcare professional without delay.
+                    </p>
+                  </CardContent>
+                ) : (
+                  <CardContent className="text-center space-y-4">
                     <div className="flex flex-col items-center gap-4 text-primary">
                       <PartyPopper className="h-12 w-12" />
                       <h2 className="text-2xl font-bold">Triage Complete</h2>
@@ -133,11 +162,22 @@ export default function TriagePage() {
                         Thank you for completing the triage. Your symptoms do not indicate an immediate emergency, but please continue to monitor your health and consult a doctor if you have concerns.
                       </p>
                     </div>
-                  )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
+                  </CardContent>
+                )}
+                 <CardFooter className="flex-col gap-4 pt-6">
+                    {redFlagTriggered && (
+                        <Button size="lg" className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                            Consult a Doctor Now
+                        </Button>
+                    )}
+                    <Button variant="outline" className="w-full" onClick={handleExport}>
+                       <Download className="mr-2 h-4 w-4" />
+                       Export Results
+                    </Button>
+                </CardFooter>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
       
       {!isCompleted && <div className="flex justify-start">
@@ -150,7 +190,7 @@ export default function TriagePage() {
           Back
         </Button>
       </div>}
-       {backtrackingDisabled && (
+       {backtrackingDisabled && !isCompleted && (
         <p className="text-sm text-center text-destructive">
           <AlertTriangle className="inline h-4 w-4 mr-1" />
           Due to a critical answer, you cannot go back.
