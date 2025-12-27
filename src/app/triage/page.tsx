@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill, Search } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -14,16 +14,10 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-
-const triageQuestions = [
-  { id: 1, text: 'Are you experiencing severe difficulty breathing?', redFlag: true },
-  { id: 2, text: 'Have you experienced any chest pain or pressure in the last 24 hours?', redFlag: true },
-  { id: 3, text: 'Do you have a fever over 101°F (38.3°C)?', redFlag: false },
-  { id: 4, text: 'Have you had a persistent cough for more than a week?', redFlag: false },
-  { id: 5, text: 'Are you feeling unusually fatigued or weak?', redFlag: false },
-  { id: 6, text: 'Have you lost your sense of taste or smell?', redFlag: false },
-];
+} from "@/components/ui/tooltip";
+import { Input } from '@/components/ui/input';
+import { getNextQuestion, type TriageState } from './actions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const likelihoodData = [
   { label: 'Viral Infection', value: 75, gradient: 'progress-gradient-1' },
@@ -31,46 +25,75 @@ const likelihoodData = [
   { label: 'Stress-related Symptoms', value: 20, gradient: 'progress-gradient-3' },
 ].sort((a, b) => b.value - a.value);
 
-type Answer = 'Yes' | 'No' | null;
-
 export default function TriagePage() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answer[]>(Array(triageQuestions.length).fill(null));
-  const [backtrackingDisabled, setBacktrackingDisabled] = useState(false);
+  const [triageState, setTriageState] = useState<TriageState | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [primarySymptom, setPrimarySymptom] = useState('');
+  
   const [refs, createRipple] = useRipple();
   const { toast } = useToast();
 
-  const handleAnswer = (answer: Answer) => {
+  const handlePrimarySymptomSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!primarySymptom) return;
+    setIsLoading(true);
+    setError(null);
+    const initialState: TriageState = {
+      primarySymptom,
+      questionHistory: [],
+      answers: [],
+      isCompleted: false,
+      redFlag: null,
+      currentQuestion: null,
+    };
+    const nextState = await getNextQuestion(initialState);
+    setTriageState(nextState);
+    setIsLoading(false);
+  };
+
+  const handleAnswer = async (answer: 'Yes' | 'No') => {
     if (typeof window !== 'undefined' && window.navigator.vibrate) {
       window.navigator.vibrate(50);
     }
-    const newAnswers = [...answers];
-    newAnswers[currentQuestionIndex] = answer;
-    setAnswers(newAnswers);
+    if (!triageState) return;
 
-    const currentQuestion = triageQuestions[currentQuestionIndex];
-    if (answer === 'Yes' && currentQuestion.redFlag) {
-      setBacktrackingDisabled(true);
+    setIsLoading(true);
+    const currentState = { ...triageState };
+    currentState.answers.push(answer);
+    if(currentState.currentQuestion){
+        currentState.questionHistory.push(currentState.currentQuestion.text);
     }
 
-    if (currentQuestionIndex < triageQuestions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    }
+    const nextState = await getNextQuestion(currentState);
+    setTriageState(nextState);
+    setIsLoading(false);
   };
 
   const handleBack = () => {
-    if (currentQuestionIndex > 0 && !backtrackingDisabled) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    // This functionality would need more complex state management to rollback the triage state.
+    // For now, we'll reset to the beginning if they want to go back.
+    if (triageState && !triageState.redFlag) {
+       setTriageState(null);
+       setPrimarySymptom('');
     }
   };
-  
+
   const handleExport = () => {
-    const results = triageQuestions.map((q, i) => ({
-        question: q.text,
-        answer: answers[i] || "Not answered",
-    }));
+    if (!triageState) return;
     
-    const blob = new Blob([JSON.stringify({ triageResults: results }, null, 2)], { type: 'application/json' });
+    const results = triageState.questionHistory.map((q, i) => ({
+        question: q,
+        answer: triageState.answers[i] || "Not answered",
+    }));
+
+    const exportData = {
+        primarySymptom: triageState.primarySymptom,
+        triageResults: results,
+        finalOutcome: triageState.redFlag ? `Red Flag: ${triageState.redFlag.reason}` : "Triage complete, no red flags."
+    }
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -85,19 +108,16 @@ export default function TriagePage() {
         description: "Your triage results have been downloaded.",
     })
   }
-
-  const progress = (currentQuestionIndex / triageQuestions.length) * 100;
-  const isCompleted = currentQuestionIndex === triageQuestions.length;
-
-  const redFlagTriggered = answers.some(
-    (ans, i) => ans === 'Yes' && triageQuestions[i].redFlag
-  );
-
+  
   const cardVariants = {
     initial: { opacity: 0, x: 50 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -50 },
   };
+
+  const progress = triageState ? (triageState.questionHistory.length / 5) * 100 : 0;
+  const isCompleted = triageState?.isCompleted ?? false;
+  const redFlagTriggered = triageState?.redFlag;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -107,15 +127,41 @@ export default function TriagePage() {
            <div className="pt-4">
              <Progress value={progress} />
              <p className="text-sm text-muted-foreground pt-2">
-                Step {Math.min(currentQuestionIndex + 1, triageQuestions.length)} of {triageQuestions.length}
+                {triageState ? `Step ${triageState.questionHistory.length + 1} of 5` : 'Step 1 of 5'}
              </p>
            </div>
         </CardHeader>
         <AnimatePresence mode="wait">
-          {!isCompleted ? (
+          {!triageState && !isLoading ? (
+             <motion.div key="primary-symptom" variants={cardVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }}>
+                <CardContent className="text-center space-y-4">
+                    <h2 className="text-2xl font-semibold">What is your primary symptom?</h2>
+                    <p className="text-muted-foreground">Describe the main issue you are experiencing, e.g., "headache", "sore throat".</p>
+                    <form onSubmit={handlePrimarySymptomSubmit} className="flex gap-2">
+                        <Input 
+                            value={primarySymptom} 
+                            onChange={(e) => setPrimarySymptom(e.target.value)} 
+                            placeholder="e.g., Headache"
+                            className="text-center"
+                        />
+                        <Button type="submit" disabled={!primarySymptom}>Start</Button>
+                    </form>
+                </CardContent>
+             </motion.div>
+          ) : isLoading ? (
+             <CardContent key="loading">
+                <div className="space-y-8">
+                    <Skeleton className="h-20 w-full" />
+                    <div className="flex justify-center gap-4">
+                        <Skeleton className="h-16 w-32" />
+                        <Skeleton className="h-16 w-32" />
+                    </div>
+                </div>
+            </CardContent>
+          ) : !isCompleted && triageState?.currentQuestion ? (
             <CardContent key="questions">
                 <motion.div
-                  key={currentQuestionIndex}
+                  key={triageState.currentQuestion.id}
                   variants={cardVariants}
                   initial="initial"
                   animate="animate"
@@ -124,7 +170,7 @@ export default function TriagePage() {
                   className="space-y-8"
                 >
                   <p className="text-2xl font-semibold text-center h-20 flex items-center justify-center">
-                    {triageQuestions[currentQuestionIndex].text}
+                    {triageState.currentQuestion.text}
                   </p>
                   <div className="flex justify-center gap-4">
                     <Button
@@ -167,7 +213,7 @@ export default function TriagePage() {
                       </motion.div>
                       <h2 className="text-3xl font-bold text-destructive">Urgent Action Required</h2>
                       <p className="text-destructive/90 max-w-md mx-auto">
-                        Based on your answers, your symptoms may require immediate medical attention. Please consult a healthcare professional without delay.
+                        Based on your answers, your symptoms may require immediate medical attention. {triageState.redFlag?.reason}
                       </p>
                     </CardContent>
                     <CardFooter className="flex-col gap-4 p-6">
@@ -262,17 +308,17 @@ export default function TriagePage() {
         </AnimatePresence>
       </Card>
       
-      {!isCompleted && <div className="flex justify-start">
+      {triageState && !isCompleted && <div className="flex justify-start">
         <Button
           onClick={handleBack}
-          disabled={currentQuestionIndex === 0 || backtrackingDisabled}
+          disabled={!!triageState?.redFlag}
           variant="outline"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
       </div>}
-       {backtrackingDisabled && !isCompleted && (
+       {triageState?.redFlag && !isCompleted && (
         <p className="text-sm text-center text-destructive">
           <AlertTriangle className="inline h-4 w-4 mr-1" />
           Due to a critical answer, you cannot go back.
