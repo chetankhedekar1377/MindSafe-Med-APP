@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill, Bot } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill, Bot, ShieldAlert } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -58,6 +58,7 @@ export default function TriagePage() {
       redFlag: null,
       currentQuestion: null,
       conditionProbabilities: [],
+      highestRiskLevel: null,
     };
     const nextState = await getNextQuestion(initialState);
     setTriageState(nextState);
@@ -133,6 +134,10 @@ export default function TriagePage() {
   const progress = triageState ? (triageState.questionHistory.length / 5) * 100 : 0;
   const isCompleted = triageState?.isCompleted ?? false;
   const redFlagTriggered = triageState?.redFlag;
+  
+  const showSupportiveOptions = isCompleted && !redFlagTriggered && triageState?.highestRiskLevel === 'YELLOW';
+  const showConsultDoctorWarning = isCompleted && !redFlagTriggered && triageState?.highestRiskLevel === 'RED';
+
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -292,37 +297,55 @@ export default function TriagePage() {
                           </Card>
                         )}
                         
-                        <Card className="border-accent">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">Supportive Options</CardTitle>
-                             <CardDescription>
-                               The following over-the-counter options may help with general discomfort. This is not medical advice.
-                             </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between rounded-lg border bg-background p-4">
-                               <div className="flex items-center gap-4">
-                                 <Pill className="h-6 w-6 text-primary" />
-                                 <div>
-                                   <p className="font-semibold">Ibuprofen</p>
-                                   <p className="text-sm text-muted-foreground">For pain and fever relief.</p>
+                        {showConsultDoctorWarning && (
+                          <Card className="border-destructive/50 bg-destructive/10">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-destructive">
+                                  <ShieldAlert />
+                                  Consult a Healthcare Provider
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <p className="text-destructive/90">
+                                  Based on the potential likelihood of certain conditions (e.g., Bacterial Infection), over-the-counter options may not be suitable. It is recommended to consult a doctor for an accurate diagnosis and treatment plan.
+                                </p>
+                              </CardContent>
+                          </Card>
+                        )}
+
+                        {showSupportiveOptions && (
+                          <Card className="border-accent">
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">Supportive Options</CardTitle>
+                               <CardDescription>
+                                 The following over-the-counter options may help with general discomfort. This is not medical advice.
+                               </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="flex items-center justify-between rounded-lg border bg-background p-4">
+                                 <div className="flex items-center gap-4">
+                                   <Pill className="h-6 w-6 text-primary" />
+                                   <div>
+                                     <p className="font-semibold">Ibuprofen</p>
+                                     <p className="text-sm text-muted-foreground">For pain and fever relief.</p>
+                                   </div>
                                  </div>
-                               </div>
-                               <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <Info className="h-5 w-5 text-muted-foreground" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p className="max-w-xs">Always read the label and consult a pharmacist or doctor before taking any new medication.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                               </TooltipProvider>
-                            </div>
-                          </CardContent>
-                        </Card>
+                                 <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon">
+                                              <Info className="h-5 w-5 text-muted-foreground" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p className="max-w-xs">Always read the label and consult a pharmacist or doctor before taking any new medication.</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                                 </TooltipProvider>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                     </div>
 
                     <CardFooter className="flex-col gap-4 pt-6 px-6">

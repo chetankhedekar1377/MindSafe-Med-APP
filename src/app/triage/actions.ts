@@ -27,6 +27,7 @@ export async function getNextQuestion(currentState: TriageState): Promise<Triage
         isCompleted: true,
         redFlag: { reason: "An unexpected system error occurred." },
         currentQuestion: null,
+        highestRiskLevel: 'RED',
     };
     return errorState;
   }

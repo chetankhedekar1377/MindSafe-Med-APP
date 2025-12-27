@@ -28,6 +28,8 @@ const ConditionProbabilitySchema = z.object({
   probability: z.number(),
 });
 
+type RiskLevel = 'GREEN' | 'YELLOW' | 'RED';
+
 export const TriageStateSchema = z.object({
   primarySymptom: z.string().describe('The user-reported primary symptom.'),
   questionHistory: z.array(z.string()).describe('The text of questions that have already been asked.'),
@@ -36,6 +38,7 @@ export const TriageStateSchema = z.object({
   redFlag: RedFlagSchema.nullable().describe('If a red flag was triggered, this contains the reason.'),
   currentQuestion: QuestionSchema.nullable().describe('The current question to be asked to the user.'),
   conditionProbabilities: z.array(ConditionProbabilitySchema).describe('The current probability distribution of possible conditions.'),
+  highestRiskLevel: z.enum(['GREEN', 'YELLOW', 'RED']).nullable().describe('The risk level of the most probable condition.'),
 });
 
 export type TriageState = z.infer<typeof TriageStateSchema>;
@@ -99,6 +102,13 @@ const CONDITIONS = {
   BACTERIAL_INFECTION: 'Bacterial Infection',
   ALLERGIES: 'Allergies',
   STRESS: 'Stress',
+};
+
+const CONDITION_RISK_LEVEL: Record<string, RiskLevel> = {
+  [CONDITIONS.VIRAL_INFECTION]: 'YELLOW',
+  [CONDITIONS.BACTERIAL_INFECTION]: 'RED',
+  [CONDITIONS.ALLERGIES]: 'YELLOW',
+  [CONDITIONS.STRESS]: 'GREEN',
 };
 
 // P(Condition) - Base probabilities for each condition
@@ -207,34 +217,44 @@ export const symptomTriageFlow = ai.defineFlow(
           state.isCompleted = true;
           state.redFlag = { reason: `The user answered "Yes" to the question: "${lastQuestionText}"` };
           state.currentQuestion = null;
+          state.highestRiskLevel = 'RED';
           return state;
         }
       }
     }
+    
+    const checkCompletion = () => {
+       if (state.questionHistory.length >= MAX_QUESTIONS) {
+         state.isCompleted = true;
+         state.currentQuestion = null;
+       }
+    };
+    checkCompletion();
 
-    // 3. Check if we've reached the maximum number of questions.
-    if (state.questionHistory.length >= MAX_QUESTIONS) {
-      state.isCompleted = true;
-      state.currentQuestion = null;
-      return state;
-    }
 
-    // 4. Determine which set of questions to use.
+    // 3. Find the next question that hasn't been asked yet.
     const normalizedSymptom = state.primarySymptom.toLowerCase().trim();
     const questionSet = SYMPTOM_QUESTIONS[normalizedSymptom] || SYMPTOM_QUESTIONS.default;
 
-    // 5. Find the next question that hasn't been asked yet.
     const nextQuestion = questionSet.find(
       (q) => !state.questionHistory.includes(q.text)
     );
 
-    // 6. Update the state with the next question or complete the flow.
-    if (nextQuestion) {
+    // 4. Update the state with the next question or complete the flow.
+    if (nextQuestion && !state.isCompleted) {
       state.currentQuestion = nextQuestion;
     } else {
       state.isCompleted = true;
       state.currentQuestion = null;
     }
+    
+    // 5. If completed, determine the highest risk level
+    if (state.isCompleted && state.conditionProbabilities.length > 0) {
+        const sortedConditions = [...state.conditionProbabilities].sort((a, b) => b.probability - a.probability);
+        const mostLikelyCondition = sortedConditions[0].condition;
+        state.highestRiskLevel = CONDITION_RISK_LEVEL[mostLikelyCondition] || 'YELLOW';
+    }
+
 
     return state;
   }
