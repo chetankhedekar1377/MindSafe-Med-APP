@@ -12,6 +12,8 @@ import {
 import { SidebarNav } from '@/components/SidebarNav';
 import { usePathname } from 'next/navigation';
 import { Logo } from './icons';
+import { PageTransition } from './PageTransition';
+
 
 const pageTitles: { [key: string]: string } = {
   '/': 'Dashboard',
@@ -43,7 +45,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SidebarTrigger className="md:hidden" />
           <h1 className="text-xl font-semibold">{title}</h1>
         </header>
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
