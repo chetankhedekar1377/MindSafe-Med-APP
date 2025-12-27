@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "triageSession": {
+      "title": "Triage Session",
+      "description": "Represents a single, anonymous symptom triage session.",
+      "type": "object",
+      "properties": {
+        "triageId": {
+          "type": "string",
+          "description": "Unique ID for this triage session."
+        },
+        "primarySymptom": {
+          "type": "string",
+          "description": "The user-reported primary symptom."
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Timestamp when the session was created."
+        },
+        "completedAt": {
+          "type": "number",
+          "description": "Timestamp when the triage was completed."
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Whether the triage flow has completed."
+        },
+        "finalState": {
+          "type": "object",
+          "description": "The final state of the triage flow.",
+          "properties": {
+            "questionHistory": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The text of questions that have already been asked."
+            },
+            "answers": {
+              "type": "array",
+              "items": {
+                "enum": ["Yes", "No"]
+              },
+              "description": "The user's answers to the questions."
+            },
+            "conditionProbabilities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "condition": {
+                    "type": "string"
+                  },
+                  "probability": {
+                    "type": "number"
+                  }
+                }
+              },
+              "description": "The final probability distribution of possible conditions."
+            },
+            "redFlag": {
+              "type": "object",
+              "properties": {
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "description": "If a red flag was triggered, this contains the reason."
+            },
+            "highestRiskLevel": {
+              "enum": ["GREEN", "YELLOW", "RED"],
+              "description": "The risk level of the most probable condition."
+            }
+          }
+        },
+        "finalVerdict": {
+          "type": "object",
+          "description": "The AI-generated summary provided to the user.",
+          "properties": {
+            "mostProbableCondition": {
+              "type": "string"
+            },
+            "confidenceLevel": {
+              "enum": ["Low", "Moderate", "High"]
+            },
+            "reasoning": {
+              "type": "string"
+            },
+            "nextSteps": {
+              "type": "string"
+            }
+          }
+        },
+        "feedback": {
+          "type": "object",
+          "description": "User-provided feedback on the triage outcome.",
+          "properties": {
+            "outcome": {
+              "enum": ["Better", "Same", "Worse", "Side Effects"]
+            },
+            "feedbackAt": {
+              "type": "number",
+              "description": "Timestamp when the feedback was submitted."
+            }
+          }
+        }
+      },
+      "required": ["triageId", "primarySymptom", "createdAt", "isCompleted"]
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {
+    "/triageSessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/triageSession"
+      },
+      "description": "Stores individual, anonymized symptom triage sessions."
+    }
+  }
+}
