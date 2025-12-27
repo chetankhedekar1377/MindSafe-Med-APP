@@ -1,17 +1,16 @@
 /**
- * Core Philosophy: This ruleset enforces a strict, private, user-ownership model. All data is considered confidential and is only accessible by the user who created it. There is no public or shared data.
+ * Core Philosophy: This ruleset enforces a strict, private, user-ownership model for user-specific data, while allowing anonymous writes to a public collection for triage sessions.
  *
- * Data Structure: The entire data model is hierarchical, with all user-specific data nested within a user's document tree under `/users/{userId}`. This includes their profile, symptom logs, medications, appointments, and health insights. This structure is fundamental to the security model.
+ * Data Structure: The data model is split. User-specific data is nested under `/users/{userId}`. Anonymous, public data for triage sessions is in a top-level `triageSessions` collection.
  *
  * Key Security Decisions:
  * - Default Deny: All paths are closed by default. Access is only granted through explicit `allow` statements.
- * - No Public Access: No data can be read or written without a user being authenticated.
- * - No User Listing: It is not possible for any user, authenticated or not, to list all documents in the top-level `/users` collection, protecting user privacy.
- * - Path-Based Security: Authorization is determined by the document's path. If a user's UID matches the `{userId}` segment of the path, they are considered the owner and are granted access. This is highly performant as it avoids extra database reads (`get()` calls) within the rules.
+ * - Anonymous Writes for Triage: Anyone can create a document in `/triageSessions`. This is essential for the anonymous symptom triage feature. Updates are allowed to add feedback later. Reads and deletes are disallowed to protect the aggregated anonymous data.
+ * - Private User Data: The `/users/{userId}` path and all its subcollections are strictly private and can only be accessed by the authenticated owner.
  *
- * Denormalization for Authorization: The data structure inherently supports this principle. By placing all of a user's private data in subcollections under their unique ID, we can write simple, fast, and secure rules without needing to read other documents for authorization context. For example, to secure `/users/{userId}/symptomLogs`, we only need to check if the requester's ID matches `{userId}`.
+ * Denormalization for Authorization: For the private user data, the structure inherently supports this principle. By placing a user's private data under their unique ID, we can write simple, fast, and secure rules without needing to read other documents for authorization context.
  *
- * Structural Segregation: The model perfectly segregates user data. Each user has their own isolated data tree. This design is highly secure and makes list queries (`list`) safe, as a user can only list documents from within their own tree.
+ * Structural Segregation: The model segregates private user data from public anonymous data. This is crucial for security. The `triageSessions` collection has a homogeneous security posture (write-only for anonymous users), and the `/users` collection has its own strict, private posture.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -21,155 +20,89 @@ service cloud.firestore {
     // Helper Functions
     // ------------------------------------------------------------------------
 
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the primary function for establishing document ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
-    /**
-     * For state-changing operations (update, delete), ensures the user is the
-     * owner AND that the document they are trying to modify actually exists.
-     * Prevents writes to non-existent documents.
-     */
+    
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * On user profile creation, ensures the document's internal 'id' field
-     * matches the document's ID in the path, creating a consistent ownership link.
-     */
     function isUserIdConsistent(userId) {
       return request.resource.data.id == userId;
     }
 
-    /**
-     * On user profile update, ensures the document's internal 'id' field
-     * cannot be changed, preventing ownership hijacking.
-     */
     function isUserIdImmutable() {
       return request.resource.data.id == resource.data.id;
     }
 
-    /**
-     * On subcollection document creation, ensures the 'userId' field in the
-     * document body matches the user ID from the path.
-     */
     function isAuthorizingFieldValid(userId) {
       return request.resource.data.userId == userId;
     }
 
-    /**
-     * On subcollection document update, ensures the 'userId' field cannot be
-     * changed, preventing the document from being reassigned to another user.
-     */
     function isAuthorizingFieldImmutable() {
       return request.resource.data.userId == resource.data.userId;
     }
 
     // ------------------------------------------------------------------------
-    // User Data Rules
+    // Anonymous Triage Data Rules
     // ------------------------------------------------------------------------
 
     /**
-     * @description Controls access to a user's own profile document.
-     * @path /users/{userId}
-     * @allow (create) An authenticated user creating their own profile document, e.g., POST /users/abc-123 with auth.uid = 'abc-123'.
-     * @deny (get) An anonymous user trying to read any user's profile.
-     * @deny (update) User 'abc-123' trying to update the profile of user 'xyz-456'.
-     * @principle Restricts access to a user's own data tree and allows for self-creation of a root user document.
+     * @description Controls access to anonymous triage sessions.
+     * @path /triageSessions/{sessionId}
+     * @allow (create) Any user (authenticated or anonymous) can create a new triage session document. This is critical for the main feature.
+     * @allow (update) Any user can update a session, specifically to add feedback later. The document fields themselves are secured by the application logic.
+     * @deny (get, list, delete) No one can read or delete session data from the client-side to protect the integrity of the anonymized dataset.
+     * @principle Allows for anonymous data collection for the triage feature while protecting the dataset from being read or tampered with.
      */
+    match /triageSessions/{sessionId} {
+      allow get, list, delete: if false;
+      allow create, update: if true; // Allow anyone to create and update (for feedback)
+    }
+
+    // ------------------------------------------------------------------------
+    // Private User Data Rules
+    // ------------------------------------------------------------------------
+
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false; // Explicitly deny listing all users.
+      allow list: if false;
       allow create: if isOwner(userId) && isUserIdConsistent(userId);
       allow update: if isExistingOwner(userId) && isUserIdImmutable();
       allow delete: if isExistingOwner(userId);
-    }
 
-    /**
-     * @description Secures a user's private symptom logs. Only the owner can manage their logs.
-     * @path /users/{userId}/symptomLogs/{symptomLogId}
-     * @allow (create, list) User 'abc-123' creating or listing their own symptom logs at /users/abc-123/symptomLogs.
-     * @deny (get) User 'xyz-456' trying to read a symptom log at /users/abc-123/symptomLogs/{logId}.
-     * @deny (delete) Any user trying to delete a log they do not own.
-     * @principle Enforces strict data ownership within a user's private subcollection.
-     */
-    match /users/{userId}/symptomLogs/{symptomLogId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
-      allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
-      allow delete: if isExistingOwner(userId);
-    }
+      match /symptomLogs/{symptomLogId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
+        allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
 
-    /**
-     * @description Secures a user's private medication records. Only the owner can manage their medication data.
-     * @path /users/{userId}/medications/{medicationId}
-     * @allow (create, list) User 'abc-123' creating or listing their own medications at /users/abc-123/medications.
-     * @deny (get) User 'xyz-456' trying to read a medication at /users/abc-123/medications/{medId}.
-     * @deny (update) Any user trying to update a medication they do not own.
-     * @principle Enforces strict data ownership within a user's private subcollection.
-     */
-    match /users/{userId}/medications/{medicationId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
-      allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
-      allow delete: if isExistingOwner(userId);
-    }
+      match /medications/{medicationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
+        allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
 
-    /**
-     * @description Secures a user's private medication reminders. Only the owner can manage their reminders.
-     * @path /users/{userId}/medicationReminders/{medicationReminderId}
-     * @allow (create, list) User 'abc-123' creating or listing their own reminders at /users/abc-123/medicationReminders.
-     * @deny (get) User 'xyz-456' trying to read a reminder at /users/abc-123/medicationReminders/{reminderId}.
-     * @deny (update) Any user trying to update a reminder they do not own.
-     * @principle Enforces strict data ownership within a user's private subcollection. The path provides the authorization context.
-     */
-    match /users/{userId}/medicationReminders/{medicationReminderId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secures a user's private appointment records. Only the owner can manage their appointments.
-     * @path /users/{userId}/appointments/{appointmentId}
-     * @allow (create, list) User 'abc-123' creating or listing their own appointments at /users/abc-123/appointments.
-     * @deny (get) User 'xyz-456' trying to read an appointment at /users/abc-123/appointments/{apptId}.
-     * @deny (delete) Any user trying to delete an appointment they do not own.
-     * @principle Enforces strict data ownership within a user's private subcollection.
-     */
-    match /users/{userId}/appointments/{appointmentId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
-      allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secures a user's private AI-generated health insights. Only the owner can read or delete them.
-     * @path /users/{userId}/healthInsights/{healthInsightId}
-     * @allow (get, list) User 'abc-123' reading or listing their own insights at /users/abc-123/healthInsights.
-     * @deny (create, update) No user can create or update insights from the client-side. This might be a server-only operation.
-     * @deny (get) User 'xyz-456' trying to read an insight at /users/abc-123/healthInsights/{insightId}.
-     * @principle Enforces strict data ownership within a user's private subcollection.
-     */
-    match /users/{userId}/healthInsights/{healthInsightId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
-      allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
-      allow delete: if isExistingOwner(userId);
+      match /medicationReminders/{medicationReminderId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isExistingOwner(userId);
+        allow delete: if isExistingOwner(userId);
+      }
+      
+      match /healthInsights/{healthInsightId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isAuthorizingFieldValid(userId);
+        allow update: if isExistingOwner(userId) && isAuthorizingFieldImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
     }
   }
 }

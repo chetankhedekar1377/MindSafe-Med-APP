@@ -8,6 +8,7 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import type { TriageState } from '@/ai/flows/symptom-triage';
 import { useReinforcementLearning, Feedback } from '@/hooks/useReinforcementLearning';
 import { Button } from './ui/button';
+import { saveFeedbackAction } from '@/app/triage/actions';
 
 const feedbackOptions = [
   { label: 'Better', icon: Smile, color: 'text-green-500' },
@@ -32,16 +33,21 @@ export function TriageFeedback() {
       // Show feedback card between 24 and 72 hours after triage completion
       if (hoursSinceCompletion >= 24 && hoursSinceCompletion <= 72) {
         setShowFeedback(true);
-      } else {
+      } else if (hoursSinceCompletion > 72) {
+        // If it's been more than 3 days, clear the last triage so we don't ask again.
+        setLastTriage(null);
         setShowFeedback(false);
       }
     }
-  }, [lastTriage]);
+  }, [lastTriage, setLastTriage]);
 
   const handleSelect = (label: Feedback) => {
     setSelected(label);
 
-    if (lastTriage) {
+    if (lastTriage && lastTriage.triageId) {
+      // Save feedback to Firestore
+      saveFeedbackAction(lastTriage.triageId, label);
+
       const sortedConditions = [...lastTriage.conditionProbabilities].sort((a, b) => b.probability - a.probability);
       const mostLikelyCondition = sortedConditions[0]?.condition;
 
