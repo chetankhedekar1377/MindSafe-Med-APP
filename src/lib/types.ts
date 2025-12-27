@@ -8,6 +8,7 @@ export interface Symptom {
 export interface Medication {
   id: string;
   name: string;
+  use: string;
   dosage: string;
   frequency: string;
   time: string;

@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { PlusCircle, Pill, Clock } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -35,16 +35,33 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useLocalStorage from '@/hooks/use-local-storage';
 import type { Medication } from '@/lib/types';
+import { commonMedications } from '@/lib/medications';
 import { cn } from '@/lib/utils';
 
 
 const medicationSchema = z.object({
   name: z.string().min(1, 'Medication name is required.'),
+  customName: z.string().optional(),
   dosage: z.string().min(1, 'Dosage is required.'),
   frequency: z.string().min(1, 'Frequency is required.'),
   time: z.string().min(1, 'Time is required.')
+}).refine(data => {
+    if (data.name === 'Other' && !data.customName) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Please specify the medication name.',
+    path: ['customName'],
 });
 
 export default function MedicationsPage() {
@@ -55,18 +72,29 @@ export default function MedicationsPage() {
     resolver: zodResolver(medicationSchema),
     defaultValues: {
       name: '',
+      customName: '',
       dosage: '',
       frequency: 'Daily',
-      time: '',
+      time: '09:00',
     },
   });
 
+  const selectedMedicationName = form.watch('name');
+
   function onSubmit(values: z.infer<typeof medicationSchema>) {
+    const medicationInfo = commonMedications.find(m => m.name === values.name);
+    const finalName = values.name === 'Other' ? values.customName! : values.name;
+
     const newMedication: Medication = {
       id: new Date().toISOString(),
-      ...values,
+      name: finalName,
+      use: medicationInfo?.use || 'Custom',
+      dosage: values.dosage,
+      frequency: values.frequency,
+      time: values.time,
       takenToday: false,
     };
+
     setMedications([...medications, newMedication]);
     form.reset();
     setIsDialogOpen(false);
@@ -93,7 +121,7 @@ export default function MedicationsPage() {
           <DialogHeader>
             <DialogTitle>Add New Medication</DialogTitle>
             <DialogDescription>
-              Enter the details of your medication.
+              Select a medication from the list or add your own.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -103,14 +131,40 @@ export default function MedicationsPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Medication Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Paracetamol" {...field} />
-                    </FormControl>
+                    <FormLabel>Medication</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a medication" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {commonMedications.map(med => (
+                           <SelectItem key={med.name} value={med.name}>{med.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {selectedMedicationName === 'Other' && (
+                 <FormField
+                    control={form.control}
+                    name="customName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Medication Name</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Enter medication name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              )}
+
               <FormField
                 control={form.control}
                 name="dosage"
@@ -118,7 +172,7 @@ export default function MedicationsPage() {
                   <FormItem>
                     <FormLabel>Dosage</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 500mg" {...field} />
+                      <Input placeholder="e.g., 500mg, 1 tablet" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -131,7 +185,7 @@ export default function MedicationsPage() {
                   <FormItem>
                     <FormLabel>Frequency</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Daily" {...field} />
+                      <Input placeholder="e.g., Daily, Twice a day" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,10 +229,10 @@ export default function MedicationsPage() {
           {medications.map((med) => (
             <Card key={med.id} className={cn("transition-all flex flex-col", med.takenToday && "bg-accent/50")}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-3">
                   <Pill /> {med.name}
                 </CardTitle>
-                <CardDescription>{med.dosage}</CardDescription>
+                <CardDescription>{med.dosage} &mdash; {med.use}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
