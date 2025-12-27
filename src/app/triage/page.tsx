@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill, Search } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -17,14 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Input } from '@/components/ui/input';
 import { getNextQuestion } from './actions';
-import type { TriageState } from '@/ai/flows/symptom-triage';
+import { TriageState, TriageStateSchema } from "@/ai/flows/symptom-triage";
 import { Skeleton } from '@/components/ui/skeleton';
-
-const likelihoodData = [
-  { label: 'Viral Infection', value: 75, gradient: 'progress-gradient-1' },
-  { label: 'Allergies', value: 45, gradient: 'progress-gradient-2' },
-  { label: 'Stress-related Symptoms', value: 20, gradient: 'progress-gradient-3' },
-].sort((a, b) => b.value - a.value);
 
 export default function TriagePage() {
   const [triageState, setTriageState] = useState<TriageState | null>(null);
@@ -47,6 +41,7 @@ export default function TriagePage() {
       isCompleted: false,
       redFlag: null,
       currentQuestion: null,
+      conditionProbabilities: [],
     };
     const nextState = await getNextQuestion(initialState);
     setTriageState(nextState);
@@ -72,8 +67,6 @@ export default function TriagePage() {
   };
 
   const handleBack = () => {
-    // This functionality would need more complex state management to rollback the triage state.
-    // For now, we'll reset to the beginning if they want to go back.
     if (triageState && !triageState.redFlag) {
        setTriageState(null);
        setPrimarySymptom('');
@@ -91,7 +84,8 @@ export default function TriagePage() {
     const exportData = {
         primarySymptom: triageState.primarySymptom,
         triageResults: results,
-        finalOutcome: triageState.redFlag ? `Red Flag: ${triageState.redFlag.reason}` : "Triage complete, no red flags."
+        finalOutcome: triageState.redFlag ? `Red Flag: ${triageState.redFlag.reason}` : "Triage complete, no red flags.",
+        likelihoods: triageState.conditionProbabilities.map(p => ({ condition: p.condition, probability: `${(p.probability * 100).toFixed(0)}%` })),
     }
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -109,6 +103,15 @@ export default function TriagePage() {
         description: "Your triage results have been downloaded.",
     })
   }
+
+  const likelihoodData = triageState?.conditionProbabilities
+    .map(p => ({
+        label: p.condition,
+        value: Math.round(p.probability * 100),
+        // Simple gradient based on value
+        gradient: p.probability > 0.6 ? 'progress-gradient-1' : p.probability > 0.3 ? 'progress-gradient-2' : 'progress-gradient-3'
+    }))
+    .sort((a,b) => b.value - a.value) ?? [];
   
   const cardVariants = {
     initial: { opacity: 0, x: 50 },
@@ -128,7 +131,7 @@ export default function TriagePage() {
            <div className="pt-4">
              <Progress value={progress} />
              <p className="text-sm text-muted-foreground pt-2">
-                {triageState ? `Step ${triageState.questionHistory.length + 1} of 5` : 'Step 1 of 5'}
+                {triageState && !triageState.isCompleted ? `Step ${triageState.questionHistory.length + 1} of 5` : 'Step 1 of 5'}
              </p>
            </div>
         </CardHeader>

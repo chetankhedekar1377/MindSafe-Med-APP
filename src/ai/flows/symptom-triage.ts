@@ -3,6 +3,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for conducting a symptom triage.
  * It takes a primary symptom and asks a series of questions to determine if a red flag condition is met.
+ * It uses a Bayesian probability engine to update the likelihood of various conditions.
  *
  * - symptomTriageFlow - A function that progresses the triage state.
  * - TriageStateSchema - The Zod schema for the triage state object.
@@ -10,7 +11,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const QuestionSchema = z.object({
   id: z.string(),
@@ -22,6 +23,11 @@ const RedFlagSchema = z.object({
   reason: z.string(),
 });
 
+const ConditionProbabilitySchema = z.object({
+  condition: z.string(),
+  probability: z.number(),
+});
+
 export const TriageStateSchema = z.object({
   primarySymptom: z.string().describe('The user-reported primary symptom.'),
   questionHistory: z.array(z.string()).describe('The text of questions that have already been asked.'),
@@ -29,12 +35,12 @@ export const TriageStateSchema = z.object({
   isCompleted: z.boolean().describe('Whether the triage flow has completed.'),
   redFlag: RedFlagSchema.nullable().describe('If a red flag was triggered, this contains the reason.'),
   currentQuestion: QuestionSchema.nullable().describe('The current question to be asked to the user.'),
+  conditionProbabilities: z.array(ConditionProbabilitySchema).describe('The current probability distribution of possible conditions.'),
 });
 
 export type TriageState = z.infer<typeof TriageStateSchema>;
 
-// This is a simplified database of questions and symptoms.
-// In a real application, this would be more complex, likely in a database.
+// Simplified database of questions and symptoms.
 const SYMPTOM_QUESTIONS: Record<string, z.infer<typeof QuestionSchema>[]> = {
   headache: [
     { id: 'h1', text: 'Is your headache severe and sudden, like a thunderclap?', redFlag: true },
@@ -87,10 +93,78 @@ const SYMPTOM_QUESTIONS: Record<string, z.infer<typeof QuestionSchema>[]> = {
   ]
 };
 
+// Bayesian Engine Components
+const CONDITIONS = {
+  VIRAL_INFECTION: 'Viral Infection',
+  BACTERIAL_INFECTION: 'Bacterial Infection',
+  ALLERGIES: 'Allergies',
+  STRESS: 'Stress',
+};
+
+// P(Condition) - Base probabilities for each condition
+const BASE_PROBABILITIES: Record<string, number> = {
+  [CONDITIONS.VIRAL_INFECTION]: 0.4,
+  [CONDITIONS.BACTERIAL_INFECTION]: 0.2,
+  [CONDITIONS.ALLERGIES]: 0.25,
+  [CONDITIONS.STRESS]: 0.15,
+};
+
+// P(Answer=Yes | Condition) - Likelihood of a "Yes" for a question given a condition
+const LIKELIHOODS: Record<string, Record<string, number>> = {
+  h4: { [CONDITIONS.STRESS]: 0.6, [CONDITIONS.VIRAL_INFECTION]: 0.3 }, // visual disturbances -> stress, viral
+  h5: { [CONDITIONS.VIRAL_INFECTION]: 0.5 }, // worse on position change -> viral (sinus)
+  f3: { [CONDITIONS.STRESS]: 0.8 }, // sad/hopeless -> stress
+  f4: { [CONDITIONS.STRESS]: 0.7, [CONDITIONS.VIRAL_INFECTION]: 0.4 }, // sleep trouble -> stress, viral
+  fe4: { [CONDITIONS.VIRAL_INFECTION]: 0.8, [CONDITIONS.BACTERIAL_INFECTION]: 0.6 }, // sore throat/cough -> viral, bacterial
+  fe5: { [CONDITIONS.VIRAL_INFECTION]: 0.7, [CONDITIONS.BACTERIAL_INFECTION]: 0.5 }, // contact with sick -> viral, bacterial
+  pf3: { [CONDITIONS.ALLERGIES]: 0.9 }, // itchy rash/hives -> allergies
+  pf5: { [CONDITIONS.ALLERGIES]: 0.7 }, // new meds/foods -> allergies
+  st3: { [CONDITIONS.VIRAL_INFECTION]: 0.7, [CONDITIONS.BACTERIAL_INFECTION]: 0.8 }, // high fever -> viral, bacterial
+  st4: { [CONDITIONS.BACTERIAL_INFECTION]: 0.8 }, // swollen tonsils/white spots -> bacterial (strep)
+  g3: { [CONDITIONS.VIRAL_INFECTION]: 0.7, [CONDITIONS.BACTERIAL_INFECTION]: 0.8 }, // fever -> viral, bacterial
+  g4: { [CONDITIONS.VIRAL_INFECTION]: 0.8, [CONDITIONS.STRESS]: 0.6 }, // fatigue -> viral, stress
+};
+
+
 const MAX_QUESTIONS = 5;
 
-// This flow is a simple state machine. It's not using an LLM for now,
-// but is structured to allow for more intelligent question selection in the future.
+/**
+ * Updates the probabilities of conditions based on a new answer using Bayes' theorem.
+ * P(C|A) = [P(A|C) * P(C)] / P(A)
+ */
+function updateProbabilities(
+  currentProbs: Record<string, number>,
+  questionId: string,
+  answer: 'Yes' | 'No'
+): Record<string, number> {
+  const newProbs: Record<string, number> = {};
+  let totalProbability = 0;
+
+  for (const condition in currentProbs) {
+    const prior = currentProbs[condition];
+    
+    // Likelihood P(Answer|Condition)
+    // Get the likelihood of a 'Yes' answer for this question given the condition.
+    const yesLikelihood = LIKELIHOODS[questionId]?.[condition] || 0.1; // Default to a small probability if not defined.
+    const likelihood = answer === 'Yes' ? yesLikelihood : 1 - yesLikelihood;
+
+    const posterior = likelihood * prior;
+    newProbs[condition] = posterior;
+    totalProbability += posterior;
+  }
+
+  // Normalize probabilities so they sum to 1
+  if (totalProbability > 0) {
+    for (const condition in newProbs) {
+      newProbs[condition] /= totalProbability;
+    }
+  }
+
+  return newProbs;
+}
+
+
+// This flow is a state machine that now incorporates a Bayesian engine.
 export const symptomTriageFlow = ai.defineFlow(
   {
     name: 'symptomTriageFlow',
@@ -98,7 +172,15 @@ export const symptomTriageFlow = ai.defineFlow(
     outputSchema: TriageStateSchema,
   },
   async (state) => {
-    // 1. Check for immediate red flags from the previous answer.
+    // 1. Initialize probabilities if this is the first step
+    if (state.questionHistory.length === 0) {
+      state.conditionProbabilities = Object.entries(BASE_PROBABILITIES).map(([condition, probability]) => ({
+        condition,
+        probability,
+      }));
+    }
+
+    // 2. Check for red flags from the previous answer and update probabilities.
     if (state.questionHistory.length > 0) {
       const lastQuestionText = state.questionHistory[state.questionHistory.length - 1];
       const lastAnswer = state.answers[state.answers.length - 1];
@@ -106,31 +188,47 @@ export const symptomTriageFlow = ai.defineFlow(
       const allQuestions = Object.values(SYMPTOM_QUESTIONS).flat();
       const lastQuestionObject = allQuestions.find(q => q.text === lastQuestionText);
 
-      if (lastQuestionObject && lastQuestionObject.redFlag && lastAnswer === 'Yes') {
-        state.isCompleted = true;
-        state.redFlag = { reason: `The user answered "Yes" to the question: "${lastQuestionText}"` };
-        state.currentQuestion = null;
-        return state;
+      if (lastQuestionObject) {
+        // Update probabilities based on the last answer
+        const currentProbsMap = state.conditionProbabilities.reduce((acc, curr) => {
+          acc[curr.condition] = curr.probability;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const newProbsMap = updateProbabilities(currentProbsMap, lastQuestionObject.id, lastAnswer);
+
+        state.conditionProbabilities = Object.entries(newProbsMap).map(([condition, probability]) => ({
+          condition,
+          probability,
+        }));
+        
+        // Check for red flag
+        if (lastQuestionObject.redFlag && lastAnswer === 'Yes') {
+          state.isCompleted = true;
+          state.redFlag = { reason: `The user answered "Yes" to the question: "${lastQuestionText}"` };
+          state.currentQuestion = null;
+          return state;
+        }
       }
     }
 
-    // 2. Check if we've reached the maximum number of questions.
+    // 3. Check if we've reached the maximum number of questions.
     if (state.questionHistory.length >= MAX_QUESTIONS) {
       state.isCompleted = true;
       state.currentQuestion = null;
       return state;
     }
 
-    // 3. Determine which set of questions to use.
+    // 4. Determine which set of questions to use.
     const normalizedSymptom = state.primarySymptom.toLowerCase().trim();
     const questionSet = SYMPTOM_QUESTIONS[normalizedSymptom] || SYMPTOM_QUESTIONS.default;
 
-    // 4. Find the next question that hasn't been asked yet.
+    // 5. Find the next question that hasn't been asked yet.
     const nextQuestion = questionSet.find(
       (q) => !state.questionHistory.includes(q.text)
     );
 
-    // 5. Update the state with the next question or complete the flow.
+    // 6. Update the state with the next question or complete the flow.
     if (nextQuestion) {
       state.currentQuestion = nextQuestion;
     } else {
