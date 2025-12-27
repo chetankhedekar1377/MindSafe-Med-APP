@@ -13,6 +13,7 @@ import { ArrowRight, HeartPulse, Pill, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Feedback } from '@/components/Feedback';
 
 export default function DashboardPage() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'dashboard-hero');
@@ -56,9 +57,13 @@ export default function DashboardPage() {
         </Card>
       </motion.div>
 
+      <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.1)}>
+        <Feedback />
+      </motion.div>
+
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.1)}>
+        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.2)}>
           <Card className="flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -85,7 +90,7 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
 
-        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.2)}>
+        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.3)}>
           <Card className="flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -112,7 +117,7 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
 
-        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.3)}>
+        <motion.div initial="initial" animate="animate" variants={cardVariants} transition={transition(0.4)}>
           <Card className="flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
