@@ -190,7 +190,7 @@ function AppointmentList({ appointments, title }: { appointments: Appointment[],
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No appointments here.</p>
+          <p className="text-muted-foreground">No appointments here. Click "Schedule Appointment" to add one.</p>
         </CardContent>
       </Card>
     );
@@ -200,9 +200,9 @@ function AppointmentList({ appointments, title }: { appointments: Appointment[],
     <div className="space-y-4">
       {appointments.map((appointment) => (
         <Card key={appointment.id} className="transition-all hover:shadow-md">
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>{appointment.provider}</CardTitle>
-            <CardDescription className="flex items-center gap-4 pt-2">
+            <CardDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 pt-2">
               <span className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4" />
                 {format(parseISO(appointment.dateTime), 'EEEE, MMMM d, yyyy')}
@@ -213,10 +213,12 @@ function AppointmentList({ appointments, title }: { appointments: Appointment[],
               </span>
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {appointment.location && <p><strong className="font-medium">Location:</strong> {appointment.location}</p>}
-            {appointment.notes && <p><strong className="font-medium">Notes:</strong> {appointment.notes}</p>}
-          </CardContent>
+          {(appointment.location || appointment.notes) && (
+            <CardContent className="space-y-2">
+              {appointment.location && <p className="text-sm"><strong className="font-medium">Location:</strong> {appointment.location}</p>}
+              {appointment.notes && <p className="text-sm"><strong className="font-medium">Notes:</strong> {appointment.notes}</p>}
+            </CardContent>
+          )}
         </Card>
       ))}
     </div>

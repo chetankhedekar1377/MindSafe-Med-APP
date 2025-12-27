@@ -71,13 +71,12 @@ export default function DashboardPage() {
                 Symptom Tracker
               </CardTitle>
               <CardDescription>
-                Log and monitor your symptoms over time.
+                Log your symptoms and monitor them over time.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <p>
-                Keep a detailed record of your symptoms to share with your doctor.
-                Tracking helps identify patterns and triggers.
+                Keep a record of your symptoms to identify patterns and share with your doctor.
               </p>
             </CardContent>
             <CardContent>
@@ -98,13 +97,12 @@ export default function DashboardPage() {
                 Medication Log
               </CardTitle>
               <CardDescription>
-                Manage your medication schedule effortlessly.
+                Manage your medication schedule.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <p>
-                Add your medications and track when you've taken them. Stay on top of
-                your treatment plan without the stress.
+                Track your medications and stay on top of your treatment plan.
               </p>
             </CardContent>
             <CardContent>
@@ -125,13 +123,12 @@ export default function DashboardPage() {
                 Appointments
               </CardTitle>
               <CardDescription>
-                Keep track of all your doctor visits.
+                Keep track of your doctor visits.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <p>
-                Schedule and manage your upcoming appointments. Never miss a
-                check-up or consultation again.
+                Schedule and manage appointments so you never miss a visit.
               </p>
             </CardContent>
             <CardContent>

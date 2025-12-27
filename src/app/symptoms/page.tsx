@@ -200,7 +200,7 @@ export default function SymptomsPage() {
 
       <div ref={formRef} />
 
-      <Card>
+      <MotionCard initial="initial" animate="animate" variants={cardVariants} transition={{delay: 0.1}}>
         <CardHeader>
           <CardTitle>Log a New or Custom Symptom</CardTitle>
           <CardDescription>
@@ -267,8 +267,9 @@ export default function SymptomsPage() {
             </form>
           </Form>
         </CardContent>
-      </Card>
-      <Card>
+      </MotionCard>
+      
+      <MotionCard initial="initial" animate="animate" variants={cardVariants} transition={{delay: 0.2}}>
         <CardHeader>
           <CardTitle>Symptom History</CardTitle>
         </CardHeader>
@@ -316,7 +317,7 @@ export default function SymptomsPage() {
             </Table>
           </div>
         </CardContent>
-      </Card>
+      </MotionCard>
     </div>
   );
 }

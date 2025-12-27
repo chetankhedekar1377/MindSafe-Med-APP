@@ -65,12 +65,12 @@ export default function InsightsPage() {
             Personalized Health Insights
           </CardTitle>
           <CardDescription>
-            Use AI to analyze your tracked health data and discover potential patterns and insights.
+            Use AI to analyze your tracked health data to discover potential patterns and insights.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            By correlating your symptoms, medications, and appointments, our AI assistant can help you understand your health better and prepare for your next doctor's visit.
+            By analyzing your symptoms, medications, and appointments, our AI can help you better understand your health and prepare for doctor visits.
           </p>
           <Button onClick={handleGenerateInsights} disabled={isLoading || !canGenerate}>
             {isLoading ? 'Generating...' : 'Generate My Insights'}

@@ -167,20 +167,20 @@ export default function MedicationsPage() {
                 <CardTitle>Your Medication Log</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">You haven't added any medications yet.</p>
+                <p className="text-muted-foreground">You haven't added any medications yet. Click "Add Medication" to get started.</p>
             </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {medications.map((med) => (
-            <Card key={med.id} className={cn("transition-all", med.takenToday && "bg-accent/50")}>
+            <Card key={med.id} className={cn("transition-all flex flex-col", med.takenToday && "bg-accent/50")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Pill /> {med.name}
                 </CardTitle>
                 <CardDescription>{med.dosage}</CardDescription>
               </CardHeader>
-              <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CardContent className="flex-grow flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span>{med.frequency} at {med.time}</span>
               </CardContent>
@@ -190,8 +190,9 @@ export default function MedicationsPage() {
                         id={`taken-${med.id}`}
                         checked={med.takenToday}
                         onCheckedChange={() => toggleTaken(med.id)}
+                        aria-label={`Mark ${med.name} as taken`}
                     />
-                    <Label htmlFor={`taken-${med.id}`}>
+                    <Label htmlFor={`taken-${med.id}`} className="cursor-pointer">
                         {med.takenToday ? 'Taken' : 'Mark as Taken'}
                     </Label>
                 </div>

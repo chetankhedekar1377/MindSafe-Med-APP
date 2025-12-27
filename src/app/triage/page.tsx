@@ -170,7 +170,7 @@ export default function TriagePage() {
                         Based on your answers, your symptoms may require immediate medical attention. Please consult a healthcare professional without delay.
                       </p>
                     </CardContent>
-                    <CardFooter className="flex-col gap-4">
+                    <CardFooter className="flex-col gap-4 p-6">
                         <Button size="lg" className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                             Consult a Doctor Now
                         </Button>
@@ -187,7 +187,7 @@ export default function TriagePage() {
                         <PartyPopper className="h-12 w-12" />
                         <h2 className="text-2xl font-bold">Triage Complete</h2>
                         <p>
-                          Thank you for completing the triage. Your symptoms do not indicate an immediate emergency, but please continue to monitor your health and consult a doctor if you have concerns.
+                          Thank you for completing the triage. Your symptoms do not indicate an immediate emergency. See below for a likelihood estimate.
                         </p>
                       </div>
                     </CardContent>
@@ -249,7 +249,7 @@ export default function TriagePage() {
                         </Card>
                     </div>
 
-                    <CardFooter className="flex-col gap-4 pt-6">
+                    <CardFooter className="flex-col gap-4 pt-6 px-6">
                       <Button variant="outline" className="w-full" onClick={handleExport}>
                          <Download className="mr-2 h-4 w-4" />
                          Export Results
