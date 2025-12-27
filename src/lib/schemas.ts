@@ -1,8 +1,7 @@
-'use server';
 
 import { z } from 'zod';
 
-const QuestionSchema = z.object({
+export const QuestionSchema = z.object({
   id: z.string(),
   text: z.string(),
   redFlag: z.boolean().describe('Whether a "Yes" answer to this question constitutes a red flag.'),
