@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const triageQuestions = [
   { id: 1, text: 'Are you experiencing severe difficulty breathing?', redFlag: true },
@@ -17,6 +18,12 @@ const triageQuestions = [
   { id: 5, text: 'Are you feeling unusually fatigued or weak?', redFlag: false },
   { id: 6, text: 'Have you lost your sense of taste or smell?', redFlag: false },
 ];
+
+const likelihoodData = [
+  { label: 'Viral Infection', value: 75, gradient: 'progress-gradient-1' },
+  { label: 'Allergies', value: 45, gradient: 'progress-gradient-2' },
+  { label: 'Stress-related Symptoms', value: 20, gradient: 'progress-gradient-3' },
+].sort((a, b) => b.value - a.value);
 
 type Answer = 'Yes' | 'No' | null;
 
@@ -139,42 +146,77 @@ export default function TriagePage() {
                 animate="animate"
                 exit="exit"
                 transition={{ duration: 0.3 }}
+                className="space-y-6"
               >
                 {redFlagTriggered ? (
-                  <CardContent className="text-center space-y-4 bg-destructive/10 p-6">
-                    <motion.div
-                        animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                       <AlertTriangle className="h-16 w-16 mx-auto text-destructive" />
-                    </motion.div>
-                    <h2 className="text-3xl font-bold text-destructive">Urgent Action Required</h2>
-                    <p className="text-destructive/90 max-w-md mx-auto">
-                      Based on your answers, your symptoms may require immediate medical attention. Please consult a healthcare professional without delay.
-                    </p>
-                  </CardContent>
-                ) : (
-                  <CardContent className="text-center space-y-4">
-                    <div className="flex flex-col items-center gap-4 text-primary">
-                      <PartyPopper className="h-12 w-12" />
-                      <h2 className="text-2xl font-bold">Triage Complete</h2>
-                      <p>
-                        Thank you for completing the triage. Your symptoms do not indicate an immediate emergency, but please continue to monitor your health and consult a doctor if you have concerns.
+                  <>
+                    <CardContent className="text-center space-y-4 bg-destructive/10 p-6">
+                      <motion.div
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                         <AlertTriangle className="h-16 w-16 mx-auto text-destructive" />
+                      </motion.div>
+                      <h2 className="text-3xl font-bold text-destructive">Urgent Action Required</h2>
+                      <p className="text-destructive/90 max-w-md mx-auto">
+                        Based on your answers, your symptoms may require immediate medical attention. Please consult a healthcare professional without delay.
                       </p>
-                    </div>
-                  </CardContent>
-                )}
-                 <CardFooter className="flex-col gap-4 pt-6">
-                    {redFlagTriggered && (
+                    </CardContent>
+                    <CardFooter className="flex-col gap-4">
                         <Button size="lg" className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                             Consult a Doctor Now
                         </Button>
-                    )}
-                    <Button variant="outline" className="w-full" onClick={handleExport}>
-                       <Download className="mr-2 h-4 w-4" />
-                       Export Results
-                    </Button>
-                </CardFooter>
+                        <Button variant="outline" className="w-full" onClick={handleExport}>
+                           <Download className="mr-2 h-4 w-4" />
+                           Export Results
+                        </Button>
+                    </CardFooter>
+                  </>
+                ) : (
+                  <>
+                    <CardContent className="text-center space-y-4">
+                      <div className="flex flex-col items-center gap-4 text-primary">
+                        <PartyPopper className="h-12 w-12" />
+                        <h2 className="text-2xl font-bold">Triage Complete</h2>
+                        <p>
+                          Thank you for completing the triage. Your symptoms do not indicate an immediate emergency, but please continue to monitor your health and consult a doctor if you have concerns.
+                        </p>
+                      </div>
+                    </CardContent>
+                    
+                    <div className="px-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart/>
+                                    Likelihood Estimate
+                                </CardTitle>
+                                <CardDescription>
+                                    This is not a diagnosis. These are statistical likelihoods based on your answers.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {likelihoodData.map((item) => (
+                                    <div key={item.label}>
+                                        <div className="flex justify-between items-end mb-1">
+                                            <span className="text-sm font-medium">{item.label}</span>
+                                            <span className="text-lg font-bold text-primary">{item.value}%</span>
+                                        </div>
+                                        <Progress value={item.value} className={cn("h-3", item.gradient)} />
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <CardFooter className="flex-col gap-4 pt-6">
+                      <Button variant="outline" className="w-full" onClick={handleExport}>
+                         <Download className="mr-2 h-4 w-4" />
+                         Export Results
+                      </Button>
+                    </CardFooter>
+                  </>
+                )}
             </motion.div>
           )}
         </AnimatePresence>

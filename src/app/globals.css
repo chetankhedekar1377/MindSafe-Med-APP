@@ -104,4 +104,14 @@
       opacity: 0;
     }
   }
+
+  .progress-gradient-1 > div {
+    background-image: linear-gradient(to right, hsl(var(--primary) / 0.5), hsl(var(--primary)));
+  }
+  .progress-gradient-2 > div {
+    background-image: linear-gradient(to right, hsl(var(--accent) / 0.5), hsl(var(--accent)));
+  }
+  .progress-gradient-3 > div {
+     background-image: linear-gradient(to right, hsl(var(--secondary) / 0.5), hsl(var(--secondary)));
+  }
 }
