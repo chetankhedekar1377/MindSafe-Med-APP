@@ -5,10 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const triageQuestions = [
   { id: 1, text: 'Are you experiencing severe difficulty breathing?', redFlag: true },
@@ -146,7 +152,6 @@ export default function TriagePage() {
                 animate="animate"
                 exit="exit"
                 transition={{ duration: 0.3 }}
-                className="space-y-6"
               >
                 {redFlagTriggered ? (
                   <>
@@ -173,7 +178,7 @@ export default function TriagePage() {
                     </CardFooter>
                   </>
                 ) : (
-                  <>
+                  <div className="space-y-6">
                     <CardContent className="text-center space-y-4">
                       <div className="flex flex-col items-center gap-4 text-primary">
                         <PartyPopper className="h-12 w-12" />
@@ -184,7 +189,7 @@ export default function TriagePage() {
                       </div>
                     </CardContent>
                     
-                    <div className="px-6">
+                    <div className="px-6 space-y-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -207,6 +212,38 @@ export default function TriagePage() {
                                 ))}
                             </CardContent>
                         </Card>
+                        
+                        <Card className="border-accent">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">Supportive Options</CardTitle>
+                             <CardDescription>
+                               The following over-the-counter options may help with general discomfort. This is not medical advice.
+                             </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between rounded-lg border bg-background p-4">
+                               <div className="flex items-center gap-4">
+                                 <Pill className="h-6 w-6 text-primary" />
+                                 <div>
+                                   <p className="font-semibold">Ibuprofen</p>
+                                   <p className="text-sm text-muted-foreground">For pain and fever relief.</p>
+                                 </div>
+                               </div>
+                               <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <Info className="h-5 w-5 text-muted-foreground" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="max-w-xs">Always read the label and consult a pharmacist or doctor before taking any new medication.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                               </TooltipProvider>
+                            </div>
+                          </CardContent>
+                        </Card>
                     </div>
 
                     <CardFooter className="flex-col gap-4 pt-6">
@@ -215,7 +252,7 @@ export default function TriagePage() {
                          Export Results
                       </Button>
                     </CardFooter>
-                  </>
+                  </div>
                 )}
             </motion.div>
           )}
