@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/personalized-health-insights.ts';
 import '@/ai/flows/symptom-triage.ts';
+import '@/ai/flows/generate-triage-summary.ts';

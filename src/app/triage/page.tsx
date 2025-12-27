@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, PartyPopper, Download, BarChart, Info, Pill, Bot } from 'lucide-react';
 import useRipple from '@/hooks/use-ripple';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -16,24 +16,40 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Input } from '@/components/ui/input';
-import { getNextQuestion } from './actions';
+import { getNextQuestion, generateTriageSummary } from './actions';
 import { TriageState, TriageStateSchema } from "@/ai/flows/symptom-triage";
+import type { TriageSummary } from '@/ai/flows/generate-triage-summary';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TriagePage() {
   const [triageState, setTriageState] = useState<TriageState | null>(null);
+  const [triageSummary, setTriageSummary] = useState<TriageSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [primarySymptom, setPrimarySymptom] = useState('');
   
   const [refs, createRipple] = useRipple();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (triageState?.isCompleted && !triageState.redFlag && !triageSummary && !isLoadingSummary) {
+      const fetchSummary = async () => {
+        setIsLoadingSummary(true);
+        const summary = await generateTriageSummary(triageState);
+        setTriageSummary(summary);
+        setIsLoadingSummary(false);
+      };
+      fetchSummary();
+    }
+  }, [triageState, triageSummary, isLoadingSummary]);
+
   const handlePrimarySymptomSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!primarySymptom) return;
     setIsLoading(true);
     setError(null);
+    setTriageSummary(null);
     const initialState: TriageState = {
       primarySymptom,
       questionHistory: [],
@@ -70,22 +86,26 @@ export default function TriagePage() {
     if (triageState && !triageState.redFlag) {
        setTriageState(null);
        setPrimarySymptom('');
+       setTriageSummary(null);
     }
   };
 
   const handleExport = () => {
     if (!triageState) return;
     
-    const results = triageState.questionHistory.map((q, i) => ({
-        question: q,
-        answer: triageState.answers[i] || "Not answered",
-    }));
-
     const exportData = {
         primarySymptom: triageState.primarySymptom,
-        triageResults: results,
-        finalOutcome: triageState.redFlag ? `Red Flag: ${triageState.redFlag.reason}` : "Triage complete, no red flags.",
+        triageResults: triageState.questionHistory.map((q, i) => ({
+            question: q,
+            answer: triageState.answers[i] || "Not answered",
+        })),
+        finalOutcome: triageState.redFlag 
+            ? `Red Flag: ${triageState.redFlag.reason}` 
+            : triageSummary 
+            ? `AI Summary: ${triageSummary.mostProbableCondition} (${triageSummary.confidenceLevel})`
+            : "Triage complete, no red flags.",
         likelihoods: triageState.conditionProbabilities.map(p => ({ condition: p.condition, probability: `${(p.probability * 100).toFixed(0)}%` })),
+        summaryDetails: triageSummary,
     }
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -104,15 +124,6 @@ export default function TriagePage() {
     })
   }
 
-  const likelihoodData = triageState?.conditionProbabilities
-    .map(p => ({
-        label: p.condition,
-        value: Math.round(p.probability * 100),
-        // Simple gradient based on value
-        gradient: p.probability > 0.6 ? 'progress-gradient-1' : p.probability > 0.3 ? 'progress-gradient-2' : 'progress-gradient-3'
-    }))
-    .sort((a,b) => b.value - a.value) ?? [];
-  
   const cardVariants = {
     initial: { opacity: 0, x: 50 },
     animate: { opacity: 1, x: 0 },
@@ -236,35 +247,50 @@ export default function TriagePage() {
                       <div className="flex flex-col items-center gap-4 text-primary">
                         <PartyPopper className="h-12 w-12" />
                         <h2 className="text-2xl font-bold">Triage Complete</h2>
-                        <p>
-                          Thank you for completing the triage. Your symptoms do not indicate an immediate emergency. See below for a likelihood estimate.
-                        </p>
                       </div>
                     </CardContent>
                     
                     <div className="px-6 space-y-6">
-                        <Card>
+                        {isLoadingSummary ? (
+                          <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart/>
-                                    Likelihood Estimate
-                                </CardTitle>
-                                <CardDescription>
-                                    This is not a diagnosis. These are statistical likelihoods based on your answers.
-                                </CardDescription>
+                              <Skeleton className="h-6 w-1/2" />
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                {likelihoodData.map((item) => (
-                                    <div key={item.label}>
-                                        <div className="flex justify-between items-end mb-1">
-                                            <span className="text-sm font-medium">{item.label}</span>
-                                            <span className="text-lg font-bold text-primary">{item.value}%</span>
-                                        </div>
-                                        <Progress value={item.value} className={cn("h-3", item.gradient)} />
-                                    </div>
-                                ))}
+                            <CardContent className="space-y-3">
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-4/5" />
                             </CardContent>
-                        </Card>
+                          </Card>
+                        ) : triageSummary && (
+                           <Card className="bg-secondary/30">
+                              <CardHeader>
+                                  <CardTitle className="flex items-center gap-2">
+                                      <Bot/>
+                                      AI Triage Summary
+                                  </CardTitle>
+                                  <CardDescription>
+                                      This is an educational summary, not a medical diagnosis.
+                                  </CardDescription>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                  <div>
+                                      <p className="text-sm text-muted-foreground">Most Probable Condition</p>
+                                      <p className="text-lg font-semibold">{triageSummary.mostProbableCondition} ({triageSummary.confidenceLevel} Confidence)</p>
+                                  </div>
+                                  <div>
+                                      <p className="text-sm text-muted-foreground">Reasoning</p>
+                                      <ul className="list-disc pl-5 mt-1 space-y-1 text-sm">
+                                          {triageSummary.reasoning.split('\n').map((item, index) => item && <li key={index}>{item.replace('-', '').trim()}</li>)}
+                                      </ul>
+                                  </div>
+                                  <div>
+                                      <p className="text-sm text-muted-foreground">Suggested Next Step</p>
+                                      <p className="text-sm">{triageSummary.nextSteps}</p>
+                                  </div>
+                              </CardContent>
+                          </Card>
+                        )}
                         
                         <Card className="border-accent">
                           <CardHeader>

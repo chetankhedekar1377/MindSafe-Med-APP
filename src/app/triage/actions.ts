@@ -1,7 +1,9 @@
 'use server';
 
 import { TriageState, TriageStateSchema, symptomTriageFlow } from "@/ai/flows/symptom-triage";
+import { generateTriageSummary as generateTriageSummaryFlow, TriageSummary, TriageSummarySchema } from "@/ai/flows/generate-triage-summary";
 import { z } from "zod";
+
 
 export async function getNextQuestion(currentState: TriageState): Promise<TriageState> {
   try {
@@ -27,5 +29,24 @@ export async function getNextQuestion(currentState: TriageState): Promise<Triage
         currentQuestion: null,
     };
     return errorState;
+  }
+}
+
+export async function generateTriageSummary(finalState: TriageState): Promise<TriageSummary> {
+  try {
+    const validatedState = TriageStateSchema.parse(finalState);
+    const summary = await generateTriageSummaryFlow(validatedState);
+    return TriageSummarySchema.parse(summary);
+  } catch (error) {
+    console.error("Error in summary generation action:", error);
+    if (error instanceof z.ZodError) {
+        console.error("Zod validation errors:", error.errors);
+    }
+    return {
+        mostProbableCondition: "Unavailable",
+        confidenceLevel: "Low",
+        reasoning: "Could not generate summary due to an unexpected error.",
+        nextSteps: "Please consult a healthcare provider for any health concerns."
+    }
   }
 }
